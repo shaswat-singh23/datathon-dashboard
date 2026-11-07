@@ -3,7 +3,7 @@
 - Claim: For Jan 1–Jun 30, 2025, one of 310 active on-floor machines, M-1158, has configured RTP outside its approximate observed-payout interval at ±3.8 standard errors. It ranks second-lowest on the manager's raw house-win baseline. This is an inspection lead, not proof of a leak or wrongdoing.
 - Evidence: `uv run python -m royale.build q1_leak`; `summarize(io.mart('q1_leak'))` and `volatility_check` in `royale/marts/q1_leak.py`. The stricter screen flags **1/310**, versus **24/310** for the simple per-machine |z| > 1.96 screen. Join checks preserve **55,092** active on-floor machine-days, **24,890,521,925** wager cents and **22,526,706,415** payout cents; **1,018** off-floor rows are excluded. Mart: 24 columns, **4,662,984 bytes**, below 5 MiB.
 - So what: Inspect M-1158's payout meters, configuration history and service records before attributing its low house win to weak demand or recommending replacement. The screen does not estimate an intervention's benefit.
-- Checked by: unchecked
+- Checked by: Alex (Claude Code, Opus 5.5), 2026-11-07 16:15
 
 | Candidate | Paid spins | Observed RTP | Configured RTP | Interval lower | Interval upper | Payout z | Manager raw rank |
 |---|---:|---:|---:|---:|---:|---:|---:|
