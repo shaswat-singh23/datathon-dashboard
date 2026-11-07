@@ -2,32 +2,37 @@
 
 Times assume a ~24h event. Rescale if it's shorter.
 
-## Roles
-| Role | Owns | First 3 hours |
-|---|---|---|
-| Claude driver | core build, parallel Claude sessions | `/triage`, `/kickoff`, skeleton running on real data |
-| Data owner | the question, domain context, auditing numbers | read rubric and data or inputs, write the core question in FINDINGS.md, sanity-check first outputs |
-| Analyst | models, evaluation | define the baseline and how results are measured; own "does this actually beat the baseline" |
-| Storyteller | README, slides, video | sponsor research, README skeleton, slide outline, keep asking "what's the headline number?" |
+## How we work
+- **Ideas and the pitch: all of us.** We pick the challenge together, brainstorm together, and everyone can present.
+- **Building: the backlog.** Every piece of work is a GitHub issue. People point their agents at tickets with `/work` (Claude Code) or "work on #N following AGENTS.md" (any other tool). New ideas go in with `/ticket` or the issue form.
+- **Two hats** (both people still pull tickets):
+  - **Decider:** ranks the backlog, promotes to `must`, says no, calls the freezes. Ties go to the decider so we don't spend time debating.
+  - **Story owner:** owns the README, slides, and video from hour 4, so the story isn't written at hour 22.
+- **Verification is everyone's job:** a ticket that produces a claimed number doesn't merge until someone else checks it.
 
 ## Timeline
 | When | What |
 |---|---|
-| 0:00 to 0:45 | Everyone reads the challenges. Claude driver runs `/triage`. Decide by 0:45, no later. |
-| 0:45 to 1:15 | Claude driver runs `/kickoff`: stack, skeleton, SETUP.md. Everyone else: data into Drive, read deliverables and rubric. |
-| 1:15 to 3:00 | Everyone pulls and runs the stack setup in SETUP.md. Data owner writes the core question. Analyst gets a baseline. |
+| 0:00 to 0:45 | Everyone reads the challenges. Run `/triage`. Decide by 0:45, no later. |
+| 0:45 to 1:15 | Decider runs `/kickoff`: stack, skeleton, SETUP.md, first wave of tickets. Everyone else gets data into Drive and reads the rubric. |
+| 1:15 | Everyone pulls, runs "Stack setup" in SETUP.md, and claims a first-wave ticket. |
+| 1:15 to 3:00 | Build. First results with baselines. |
 | 3:00 | Sync. Commit to an angle or switch using the triage kill criteria. Last free switch. |
-| 3:00 to T-6h | Build. Sync every 3 hours. Merge to master every 2 to 3 hours. |
-| Overnight | Sleep in shifts, 2 people at a time, 3 to 4 hours each. Nobody codes 24h straight. |
-| T-6h | Feature freeze. No new analyses. |
-| T-4h | Code freeze. Polish the demo. Run `/ship-check`. |
+| 3:00 to T-6h | Build. Sync every 3 hours. |
+| Overnight | Sleep in shifts, 2 people at a time, 3 to 4 hours each. Agents can keep running tickets. |
+| T-6h | Feature freeze. Only `bug` and story tickets from here. |
+| T-4h | Code freeze. Run `/ship-check`. |
 | T-3h | Record the video. Record it twice. |
 | T-1h | Submit. Devpost gets slow near the deadline. |
 
 ## Sync (10 minutes, every 3 hours)
-Each person: done, next, blocked. Update FINDINGS.md Decisions. Storyteller states the current headline. If nobody can state it, that's the problem to fix next.
+1. Each person: what merged, what's in progress, what's blocked.
+2. Review open PRs that need a second pair of eyes.
+3. Decider re-ranks the backlog: promote, demote, close what we won't get to.
+4. State the current headline result. If nobody can, that's the next `must` ticket.
 
 ## Rules of thumb
 - One question answered convincingly beats five answered shallowly.
 - Everything in the final demo answers a question a sponsor would ask.
-- When Claude's numbers look great, the data owner checks them before anyone celebrates.
+- When an agent's numbers look great, someone else checks them before anyone celebrates.
+- A backlog that only grows means the decider isn't saying no enough.
