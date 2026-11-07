@@ -15,17 +15,17 @@ This project was built by a four-person team using AI coding agents under the co
 - Turned each GitHub issue (goal, done-when, scope) into code, tests and a `findings/` file, inside the issue's scope.
 - Wrote the SQL and pandas behind every mart in `royale/marts/`, the Streamlit pages in `pages/`, and the pytest suite.
 - Drafted the text of findings files, this appendix, the write-up and PR bodies from the numbers their own code produced.
-- Reviewed pull requests in two separate reviewer agent sessions, both running the `/merge-queue` skill under Kyle's GitHub account and both posting comments that start with `Reviewer:` on the exact commit they checked. The first ran from about 20:25 UTC on 2026-11-07; the second ran a shorter loop from about 22:40 to 23:05 UTC. The GitHub record shows:
+- Reviewed pull requests in two separate reviewer agent sessions, both running the `/merge-queue` skill under Kyle's GitHub account and both posting comments that start with `Reviewer:` on the exact commit they checked. The first ran from about 20:25 UTC on 2026-11-07; the second ran from about 21:50 to 23:15 UTC. The GitHub record shows:
   - PRs #1 to #50 were merged by team members before any reviewer session existed (the `/merge-queue` skill itself landed in #49 at 19:35 UTC). None has a reviewer comment.
-  - A reviewer session approved and then merged, within seconds, #51, #52, #53, #55, #57, #58, #68, #71, #80, #82, #83, #84 and #87. The second session is the one that merged #71, #80, #82 and #83.
-  - Humans merged #77 and #85 after a reviewer approval.
-  - Seven PRs were merged before a reviewer had approved them: #54 (merged by its author after a conflict-only change request), #61 (merged one commit past the reviewed commit, after a change request), #62 (merged while labeled needs-human, with no prior review), #63 (merged as a draft before any review), #73, #75 and #76 (merged before any review). Each received a reviewer check after the merge. Those checks found no blocking problem except on #75, whose merge commit reverted one appendix row; that was filed and fixed separately (#78, #79, #82).
+  - A reviewer session approved and then merged, within seconds, #51, #52, #53, #55, #57, #58, #68, #71, #80, #82, #83, #84 and #87. The second session merged #68, #71, #80, #82 and #83, and wrote the approvals on #77 and #85.
+  - Humans merged #77 and #85 after a reviewer approval. Shaswat, as decider, merged #89, a change to `.claude/skills/` that AGENTS.md routes to the decider rather than to the review queue.
+  - Seven PRs were merged before a reviewer had approved them: #54 (merged by its author after a conflict-only change request), #61 (merged one commit past the reviewed commit, after a change request), #75 and #76 (merged by a teammate before any review), and #62 (merged while labeled needs-human, with no prior review), #63 (merged as a draft before any review) and #73 (merged before any review). The last three were merged under Kyle's account outside the review flow, by Kyle or a non-reviewer session on his account; neither reviewer session merges without approving first. Each of the seven received a reviewer check after the merge. Those checks found no blocking problem except on #75, whose merge commit reverted one appendix row; that was filed and fixed separately (#78, #79, #82).
 - Independently re-ran the Reproduce blocks of findings #23, #31, #32, #34 and #47 in the first reviewer session and matched their numbers. These are agent re-runs, not human checks; see "Limits of this process".
 
 ## What the humans did
 
 - Chose the questions, the money-math rules and the baselines (AGENTS.md "Challenge rules"), and ranked which tickets got built.
-- Read PR summaries and the reviewer sessions' reports, merged PRs themselves (every PR up to #50, and later #54, #61, #75, #76, #77 and #85), and decide which claims go in the story. The reviewer sessions merged the rest.
+- Read PR summaries and the reviewer sessions' reports, merged PRs themselves (every PR up to #50, and later #54, #61, #75, #76, #77, #85 and #89), and decide which claims go in the story. The reviewer sessions merged the 13 PRs they approved; #62, #63 and #73 were merged under Kyle's account outside the review flow.
 - Will record the video, present, and upload the submission (tickets #30, #28 and #29); none of these had happened when this disclosure was written.
 
 ## What AI did not do
