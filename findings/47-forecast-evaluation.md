@@ -3,7 +3,7 @@
 - Claim: The weekday-mean baseline wins the May–June holdout at $68,698.55/day MAE. The fitted weekday-plus-trend regression does not beat it: MAE is $27,959.28/day (40.70%) higher. Weekday means improve on the constant baseline by $149,559.55/day (68.52%).
 - Evidence: The reproduction below rebuilds all 61 frozen forecasts from raw `property_day`, matches the committed mart, scores each method, and reconciles daily property coin-in against on-floor machine meters.
 - So what: Calendar regression is not automatically better than a seasonal baseline. Retain the weekday profile as a planning starting point and test scheduling changes prospectively; coin-in forecasts do not establish staffing requirements or promotion lift.
-- Checked by: unchecked
+- Checked by: Kyle (Claude Code, Fable 5.1), 2026-11-07 16:25
 
 | Method | Full May–June MAE (USD/day) | May (31 days) | June (30 days) |
 |---|---:|---:|---:|

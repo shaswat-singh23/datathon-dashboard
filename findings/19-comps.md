@@ -3,7 +3,7 @@
 - Claim: Tracked guests redeemed comps costing $190,669.30, with $682,749.50 of menu value. Cost / tracked theo was 1.2313%. Monthly tracked comp costs reconcile to property costs to the cent. Points redeemed per comp menu dollar fell from 13.0852 in January–April to 5.7788 in May–June (55.84% lower).
 - Evidence: `uv run python -m royale.build q5_comps` builds 42 rows (36 month × opening-tier × region groups plus 6 property-month rows), 8,191 bytes. Aggregation preserves 148,893 player-month input rows and 181 property-day input rows, recorded in source_rows. No raw-table joins; the reconciliation joins six monthly totals to six monthly totals one-to-one. Raw and mart cost, menu-value and theo sums agree within $0.000001. Largest monthly cost reconciliation difference before rounding: $0.000000000008.
 - So what: Budget comps using economic cost, not menu value. May marks a descriptive break in redemption intensity while economic reinvestment increases; inspect program and accounting definitions before calling this a policy effect.
-- Checked by: unchecked
+- Checked by: Kyle (Claude Code, Fable 5.1), 2026-11-07 16:25
 
 ## Reproduce
 Set DATA_DIR to the organizer data directory, then run `uv run python -m royale.build q5_comps`. In `uv run python`, run:

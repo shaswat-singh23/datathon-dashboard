@@ -3,7 +3,7 @@
 - Claim: Full-period floor coin-in has weak daily associations with airport maximum temperature (Pearson r = -0.032400) and precipitation (-0.153200). Monthly mean coin-in correlates +0.486678 with Las Vegas visitors per calendar day, but there are only six monthly pairs. These associations do not establish why demand changed.
 - Evidence: `uv run python -m royale.build q2_context` produces 181 rows, 15 columns, 15,878 bytes. Inputs have 181 property dates, 181 weather dates, and six tourism months; left joins retain 181 unique property dates with no missing weather or tourism values. Coin-in before and after is $248,905,219.25. The page's correlation table reproduces the results below.
 - So what: Public context can frame a demand investigation, but does not justify a machine replacement or a causal intervention.
-- Checked by: unchecked (author verification below; independent review required)
+- Checked by: Kyle (Claude Code, Fable 5.1), 2026-11-07 16:25
 
 | Context | Independent pairs | Raw Pearson r | Weekday-adjusted r |
 |---|---:|---:|---:|
