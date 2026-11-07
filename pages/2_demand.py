@@ -6,6 +6,8 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
+from royale.evidence import render_evidence
+
 from royale import io
 
 st.set_page_config(page_title="Demand: The Gilded Ace", page_icon="♠", layout="wide")
@@ -295,6 +297,7 @@ else:
 
 # ---- Source ----------------------------------------------------------------------------
 with st.expander("Source"):
+    render_evidence(['findings/16-demand-changes.md', 'findings/34-demand-context.md'], key='2_demand')
     st.markdown(
         """
 **Mart:** `marts/q2_demand.parquet`, built by `royale/marts/q2_demand.py` (`uv run python -m royale.build q2_demand`).

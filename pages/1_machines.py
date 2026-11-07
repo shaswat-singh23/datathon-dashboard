@@ -2,6 +2,8 @@
 import pandas as pd
 import plotly.express as px
 import streamlit as st
+
+from royale.evidence import render_evidence
 from royale import io
 from royale.marts import q1_location as location
 from royale.marts.q1_machines import summarize
@@ -184,6 +186,7 @@ else:
                'Traffic counts sensor crossings, not unique people. These phase rates do not control '
                'for seasonality, events, bet-size mix or displacement and do not identify a closure effect.')
 with st.expander('Source'):
+    render_evidence(['findings/22-machines.md', 'findings/31-location.md', 'findings/32-leak-screen.md'], key='1_machines')
     st.markdown('''**Location mart:** `marts/q1_location.parquet`; build with
 `uv run python -m royale.build q1_location`. Query and comparison functions:
 `royale/marts/q1_location.py`. Grain: machine × month × zone × bank × configuration × closure phase.

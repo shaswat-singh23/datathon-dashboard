@@ -2,6 +2,8 @@
 import pandas as pd
 import streamlit as st
 
+from royale.evidence import render_evidence
+
 from royale import budget, config, io
 from royale.marts.q6_actions import assess, proposed_plan
 
@@ -154,6 +156,7 @@ with st.expander("Trace: selected option"):
     st.markdown(f"[July plan: sources, calculations and limitations]({FINDING})")
 
 with st.expander("Source"):
+    render_evidence(['findings/23-july-actions.md', 'findings/17-downtime.md', 'findings/22-machines.md'], key='6_actions')
     st.markdown("""**Mart:** `marts/q6_actions.parquet`, built with
 `uv run python -m royale.build q6_actions`. This page reads only that committed mart.
 
