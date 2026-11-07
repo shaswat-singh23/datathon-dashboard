@@ -31,12 +31,12 @@ FINDINGS.md   every insight, number, and decision. Single source of truth.
 3. If a result looks too good, assume a bug or leakage until proven otherwise.
 4. When combining data, check row counts before and after.
 5. A number goes in FINDINGS.md, with the code that produced it, before it goes in slides or the README.
-6. main always runs. Check before every merge.
+6. master always runs. Check before every merge.
 7. Small commits with clear messages. Pull before you push.
 8. Secrets live in `.env` and are read from environment variables. Each person uses their own API key when possible.
 
 ## Git
-- One branch per person: `<name>/<topic>`. Merge to main every 2 to 3 hours.
+- One branch per person: `<name>/<topic>`. Merge to master every 2 to 3 hours.
 - Never commit data/raw, `.env`, or files over 50 MB.
 
 ## FINDINGS.md entry format

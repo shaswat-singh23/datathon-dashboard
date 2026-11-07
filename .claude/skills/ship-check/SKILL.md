@@ -8,9 +8,9 @@ disable-model-invocation: true
 Read AGENTS.md for the challenge's deliverables and judging weights. Run every check below. Report pass or fail for each, fix what you can, then re-check.
 
 ## Repo
-- [ ] Fresh clone works: clone main into a temp dir and follow SETUP.md and the README run steps exactly. Report any error.
+- [ ] Fresh clone works: clone master into a temp dir and follow SETUP.md and the README run steps exactly. Report any error.
 - [ ] Nothing in data/raw, no `.env` or keys, no file over 50 MB is tracked (`git ls-files` plus sizes). Search tracked files for strings that look like API keys.
-- [ ] main has everyone's latest work merged.
+- [ ] master has everyone's latest work merged.
 
 ## Deliverable
 - [ ] Every deliverable listed in AGENTS.md exists and works.

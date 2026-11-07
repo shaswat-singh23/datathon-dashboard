@@ -17,4 +17,4 @@ Read the challenge's deliverables, judging criteria, data, and any starter code.
 6. **SETUP.md**: add a "Stack setup" section with the exact commands a teammate runs after `git pull`, ending with one command that proves it works.
 7. **FINDINGS.md**: fill in the Decisions section.
 
-Show the plan before creating files. After approval, build it, run the proof command, and commit to main as "kickoff: <challenge>".
+Show the plan before creating files. After approval, build it, run the proof command, and commit to master as "kickoff: <challenge>".

@@ -30,8 +30,8 @@ The stack (languages, packages) gets set up after we pick a challenge. Its comma
 ```bash
 git switch -c <name>/<topic>            # start work
 git add -A && git commit -m "what"      # save
-git pull origin main                    # get teammates' work into your branch
-git push -u origin HEAD                 # share; merge to main on GitHub
+git pull origin master                    # get teammates' work into your branch
+git push -u origin HEAD                 # share; merge to master on GitHub
 ```
 Conflict? Ask the Claude driver. Don't force-push.
 

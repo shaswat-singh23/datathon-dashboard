@@ -17,7 +17,7 @@ Times assume a ~24h event. Rescale if it's shorter.
 | 0:45 to 1:15 | Claude driver runs `/kickoff`: stack, skeleton, SETUP.md. Everyone else: data into Drive, read deliverables and rubric. |
 | 1:15 to 3:00 | Everyone pulls and runs the stack setup in SETUP.md. Data owner writes the core question. Analyst gets a baseline. |
 | 3:00 | Sync. Commit to an angle or switch using the triage kill criteria. Last free switch. |
-| 3:00 to T-6h | Build. Sync every 3 hours. Merge to main every 2 to 3 hours. |
+| 3:00 to T-6h | Build. Sync every 3 hours. Merge to master every 2 to 3 hours. |
 | Overnight | Sleep in shifts, 2 people at a time, 3 to 4 hours each. Nobody codes 24h straight. |
 | T-6h | Feature freeze. No new analyses. |
 | T-4h | Code freeze. Polish the demo. Run `/ship-check`. |
