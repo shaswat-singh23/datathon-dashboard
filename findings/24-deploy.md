@@ -15,6 +15,8 @@
 
 Community Cloud has no API or CLI; the first deploy is a browser click-through by a GitHub collaborator on `shaswat-singh23/datathon-dashboard`.
 
+The repo is **private** and owned by Shaswat. Community Cloud can deploy a private repo only if the repo owner authorizes the Streamlit GitHub app for private repositories (one private app per free account), so step 1 is best done by Shaswat, or the repo is made public first. Either way, set the app to **Public** under Sharing after deploy so judges need no login.
+
 1. Sign in at https://share.streamlit.io with GitHub (allow access to the `shaswat-singh23` org if asked).
 2. Create app, "Deploy a public app from GitHub".
 3. Repository `shaswat-singh23/datathon-dashboard`, branch `master`, main file path `app.py`.
@@ -27,7 +29,7 @@ Community Cloud has no API or CLI; the first deploy is a browser click-through b
 
 ## Why these files
 
-- `.python-version` = 3.12: pins the interpreter for uv locally and documents the version to select on Community Cloud.
+- `.python-version` = 3.12: the one Python version everywhere (local uv, the runbook, and the Advanced-settings dropdown). `pyproject.toml` and `uv.lock` are unchanged; the universal lock installs on 3.12 and 3.13.
 - `.streamlit/config.toml`: theme, headless server, usage stats off. Already present; unchanged.
 - `uv.lock`: the server installs exactly what we test locally.
 
