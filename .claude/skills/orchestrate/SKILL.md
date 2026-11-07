@@ -31,12 +31,11 @@ Keep each cycle lean. Read what you need with gh, act, report. Don't explore cod
 - **Malformed tickets** (missing one of the five AGENTS.md headings, no priority label, Done-when not checkable, bigger than L): fix the body with `gh issue edit`, or split it into new tickets and close the original pointing at them.
 - **Scope overlap** between two tickets in progress at once: comment on both naming the overlap, and suggest which should depend on the other.
 
-## 3. Review result-producing PRs (your most valuable work)
-For every open PR that claims a number, score, or finding and has no review comment from you yet, read it (`gh pr view N -R <repo>` and `gh pr diff N -R <repo>`) and check:
-- It compares against a simple baseline.
-- The evaluation is valid. House: no future ticks, validation-half discipline, deterministic. Poker: multiple seeds, 0 errors, time bank used. Dashboard: ratio of sums, exposure/availability/luck adjusted, time-based holdout, no leakage.
-- Every Done-when item was actually run, not asserted.
-Comment with `gh pr comment N -R <repo> --body "..."`, starting with **Orchestrator review: looks right** or **Orchestrator review: concerns** and the specific reasons. Never approve, merge, or push. Say whether a human should still look before merging.
+## 3. Watch the review queue (don't review PRs yourself)
+Each repo's `/merge-queue` reviewer reviews and merges PRs. You only watch it:
+- A PR open for 30+ minutes with no `Reviewer:` comment on its current head means that repo's merge-queue loop is probably down. Say so in the report.
+- PRs labeled `needs-human` go under "Decisions needed", naming the decider.
+- PRs labeled `changes-requested` with no new commit for 30+ minutes: comment on the linked issue to nudge the author.
 
 ## 4. Plan (act within limits)
 - Compare each challenge's progress with its deliverables and deadline. Name the critical path.
