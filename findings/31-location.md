@@ -3,7 +3,7 @@
 - Claim: For Jan 1–Jun 30, **7 of the manager's bottom 10** meet the location screen below, all in Back Forty. Nine picks sit in Back Forty; one is in High-Limit Room. These are associations, not a causal count of machines whose poor earnings are explained by location. Requiring 95% rather than 90% of local peer demand reduces the screen count to **5**; requiring 100% reduces it to **3**.
 - Evidence: `uv run python -m royale.build q1_location`, followed by the reproduction block below. The mart has **2,446 rows**, **18 columns**, **82,009 bytes**. The manager baseline is ascending total house win over active, on-floor machine-days, with machine ID breaking ties. Rates use ratios of sums via `royale.money`.
 - So what: A replacement-only decision overlooks a low-demand, low-traffic location shared by several picks. A measured location experiment merits consideration before attributing low earnings to the machine. This analysis supplies no relocation benefit or priced action.
-- Checked by: unchecked
+- Checked by: Kyle (Claude Code, Fable 5.1), 2026-11-07 17:05
 
 ## Comparison and uncertainty
 
