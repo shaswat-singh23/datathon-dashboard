@@ -6,7 +6,7 @@ This project was built by a four-person team using AI coding agents under the co
 
 | Tool | Evidence in the repository | Used for |
 |---|---|---|
-| Claude Code (Anthropic), models Claude Opus 5.5 and Claude Fable 5.1 | `Co-Authored-By` trailers on commits; the `/work`, `/ticket`, `/fanout`, `/merge-queue` and `/orchestrate` skills in `.claude/skills/` | Writing mart builders, pages, tests and findings drafts from GitHub tickets; drafting PR descriptions; an independent reviewer session (`/merge-queue`) that re-ran each PR's tests on its exact commit and then merged it or requested changes; an orchestrator session that kept tickets well-formed and posted status reports; this appendix and disclosure |
+| Claude Code (Anthropic), models Claude Opus 5.5 and Claude Fable 5.1 | `Co-Authored-By` trailers on commits; the `/work`, `/ticket`, `/fanout`, `/merge-queue` and `/orchestrate` skills in `.claude/skills/` | Writing mart builders, pages, tests and findings drafts from GitHub tickets; drafting PR descriptions; two independent reviewer sessions (`/merge-queue`) that re-ran each PR's tests on its exact commit and then merged it or requested changes; an orchestrator session that kept tickets well-formed and posted status reports; this appendix and disclosure |
 | OpenAI Codex | Author lines in `findings/18-player-outcomes.md`, `20-coin-in-forecast.md`, `23-july-actions.md`, `34-demand-context.md`, `47-forecast-evaluation.md` | Same ticket-driven building for the players, forecast, actions and context work |
 | Other assistants allowed by AGENTS.md (Cursor, GitHub Copilot, ChatGPT, Gemini in a browser) | Named in `SETUP.md`; no repository evidence of use beyond that | Permitted for ticket work by any teammate; nothing in this repo is attributed to them |
 
@@ -15,13 +15,17 @@ This project was built by a four-person team using AI coding agents under the co
 - Turned each GitHub issue (goal, done-when, scope) into code, tests and a `findings/` file, inside the issue's scope.
 - Wrote the SQL and pandas behind every mart in `royale/marts/`, the Streamlit pages in `pages/`, and the pytest suite.
 - Drafted the text of findings files, this appendix, the write-up and PR bodies from the numbers their own code produced.
-- Reviewed pull requests as a separate agent session that re-ran the tests on the exact commit and either merged or requested changes. That session, running under a teammate's GitHub account, merged many of the result-bearing PRs itself. One exception: PR #54 was merged by its author before the reviewer re-ran it, and was checked after the fact.
-- Independently re-ran the Reproduce blocks of findings #23, #31, #32, #34 and #47 in that reviewer session and matched their numbers. These are agent re-runs, not human checks; see "Limits of this process".
+- Reviewed pull requests in two separate reviewer agent sessions, both running the `/merge-queue` skill under Kyle's GitHub account and both posting comments that start with `Reviewer:` on the exact commit they checked. The first ran from about 20:25 UTC on 2026-11-07; the second ran a shorter loop from about 22:40 to 23:05 UTC. The GitHub record shows:
+  - PRs #1 to #50 were merged by team members before any reviewer session existed (the `/merge-queue` skill itself landed in #49 at 19:35 UTC). None has a reviewer comment.
+  - A reviewer session approved and then merged, within seconds, #51, #52, #53, #55, #57, #58, #68, #71, #80, #82, #83, #84 and #87. The second session is the one that merged #71, #80, #82 and #83.
+  - Humans merged #77 and #85 after a reviewer approval.
+  - Seven PRs were merged before a reviewer had approved them: #54 (merged by its author after a conflict-only change request), #61 (merged one commit past the reviewed commit, after a change request), #62 (merged while labeled needs-human, with no prior review), #63 (merged as a draft before any review), #73, #75 and #76 (merged before any review). Each received a reviewer check after the merge. Those checks found no blocking problem except on #75, whose merge commit reverted one appendix row; that was filed and fixed separately (#78, #79, #82).
+- Independently re-ran the Reproduce blocks of findings #23, #31, #32, #34 and #47 in the first reviewer session and matched their numbers. These are agent re-runs, not human checks; see "Limits of this process".
 
 ## What the humans did
 
 - Chose the questions, the money-math rules and the baselines (AGENTS.md "Challenge rules"), and ranked which tickets got built.
-- Read PR summaries and the reviewer session's reports, merged some PRs themselves (the rest were merged by the reviewer session), and decide which claims go in the story.
+- Read PR summaries and the reviewer sessions' reports, merged PRs themselves (every PR up to #50, and later #54, #61, #75, #76, #77 and #85), and decide which claims go in the story. The reviewer sessions merged the rest.
 - Will record the video, present, and upload the submission (tickets #30, #28 and #29); none of these had happened when this disclosure was written.
 
 ## What AI did not do
