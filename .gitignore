@@ -25,3 +25,9 @@ CLAUDE.local.md
 # os / editor
 .DS_Store
 Thumbs.db
+
+# organizer data clone (245 MB). Point DATA_DIR at dashboard-royale/data instead.
+/dashboard-royale/
+
+# streamlit secrets
+.streamlit/secrets.toml

@@ -10,24 +10,51 @@ All work is a GitHub issue. Agents do the building; humans decide what gets buil
 - **Story:** everyone presents. Story work is `must` tickets with deadlines (created at kickoff). The decider makes sure they land on time.
 
 ## Challenge
-Filled in at kickoff. The decider updates the headline at each sync.
-- Challenge: ___
-- Deliverables: ___
-- Judging weights: ___
-- Core question: ___
-- Headline result: ___
+Dashboard Royale (TAMU Datathon). Fictional 300-machine casino, The Gilded Ace, Jan 1 to Jun 30 2025. Docs and data: `dashboard-royale/` (organizer clone, gitignored), start with `dashboard-royale/GUIDE.md`.
+- Challenge: management will replace the 10 machines that earned the least. Is that right, or is it luck, location, or a leak?
+- Deliverables: public interactive dashboard (link), video walkthrough under 2 min, write-up under 400 words, one ML or time-series method vs a simple baseline on a time-based holdout, up to 3 priced action types within $100,000 for Jul 1 to Jul 30 2025 (cost, expected effect, uncertainty, measurement plan), all code, AI-use disclosure, Claims & Evidence appendix (table/query, result, alternative explanation, limitation).
+- Judging weights: analytical validity 30%, dashboard and communication 25%, modeling and validation 20%, recommendations and tradeoffs 15%, originality 10%.
+- Core question: which of the manager's bottom-10 machines are truly underperforming once exposure, availability and luck are accounted for, and which cause (luck, location, leak) do the data support?
+- Headline result: ___ (decider updates at each sync)
+
+Judges will: change the analysis period, drill into one bank or one guest group, find how the model was validated, and trace one recommendation back to its evidence. Every page gets a period filter, one drill, and a "Source" expander.
+
+### Challenge rules
+- **Baselines.** Machine claims are compared against the manager's list: bottom 10 by raw total house win over active days. The forecast is compared against the training-period constant daily mean (train Jan to Apr, test May to Jun, report MAE).
+- **Money math** goes through `royale/money.py`. Ratios are ratios of sums. Theo = coin-in x (1 - configured RTP). Luck residual = house win - theo. Compare per available hour, not raw totals. Scheduled hours come from `calendar_day.scheduled_seconds` (Mar 8 has 23 h).
+- **Exclude off-floor rows** (`location_id` null, 1,018 rows) from machine comparisons. Use `placements` for location on a date; machines move.
+- **Comp cost is inside POS cogs.** Subtract it once.
+- **Carded tables see only carded play.** Compare with `carded_*` columns in `machine_day`, never with totals.
+- **No leakage.** Time-based split only. Forecast inputs are what was known on the prediction date; LVCVA and survey tables were published after 2025 and cannot feed a forecast.
+- **No accusations.** Unusual payouts are leads to inspect, not findings of wrongdoing. Report player outcomes honestly; no ideas that push heavy losers to play more.
+- **Action pricing** goes through `royale/budget.py`: `quantity x (unit_cost + recurring_per_day x max(0, 30 - lead_days))`, at most 3 action types, respect `quantity_limit` and `incompatibility_group`.
 
 ## Stack
-Filled in at kickoff.
+Python 3.11+ managed by `uv`. Streamlit multipage app, DuckDB for queries over parquet, pandas, Plotly, scikit-learn, pytest. Deploy target: Streamlit Community Cloud from master.
+- Run: `uv run streamlit run app.py`
+- Build marts: `uv run python -m royale.build`
+- Test: `uv run pytest -q`
+- Add a package: `uv add <pkg>` in its own small PR, merged first.
 
 ## Layout
-Filled in at kickoff. Defaults that hold for any challenge:
 ```
-data/raw/     original data exactly as downloaded. NEVER modify. gitignored.
-findings/     one file per result. See "Findings" below.
-.env          secrets and local paths (DATA_DIR). gitignored. Copied into Claude worktrees by .worktreeinclude.
+royale/            Python package shared by every page
+  config.py        DATA_DIR, table registry, window and budget constants
+  io.py            io.table(name), io.sql(query) over DATA_DIR; io.mart(name) over marts/
+  money.py         money-math helpers (ticket #1). All pages use these.
+  budget.py        action pricing and plan validation (ticket #2)
+  marts/           plugin folder: one module per mart, defines NAME and build(con)
+  build.py         builds every mart into marts/
+app.py             Streamlit home page
+pages/             one page per question: 1_machines.py ... 6_actions.py, 7_model.py
+marts/             committed derived parquet, each under 5 MB (tests enforce). Pages read only these.
+tests/             pytest. Tests that need raw data skip when DATA_DIR is empty.
+findings/          one file per result. See "Findings" below.
+docs/              write-up, Claims & Evidence appendix, AI disclosure
+dashboard-royale/  organizer clone: data + docs. gitignored. NEVER modify.
+.env               DATA_DIR and secrets. gitignored. Copied into Claude worktrees by .worktreeinclude.
 ```
-Code reads data from the `DATA_DIR` environment variable (default `./data`), so every worktree uses the same data without copying it.
+Raw data never enters the repo. Code reads it from the `DATA_DIR` environment variable (absolute path to the folder holding `1_prepared_views/`), so every worktree uses the same data without copying it. A question ticket owns three things and nothing else: `royale/marts/qN_<slug>.py`, `pages/N_<slug>.py`, and its `findings/` files.
 
 ## Ticket format
 Every issue body has these five headings, in this order. The GitHub issue form produces them. Agents creating issues with `gh issue create` write them by hand.
@@ -82,7 +109,7 @@ Each issue has exactly one priority label: `must`, `should`, or `nice`. Add `bug
 - Results go in their own files in `findings/`, never one shared file.
 
 ## Rules
-1. Never edit or overwrite anything in data/raw.
+1. Never edit or overwrite anything in data/raw or dashboard-royale/.
 2. Every result is compared against a simple baseline (naive model, random agent, rule of thumb). No baseline, no claim.
 3. If a result looks too good, assume a bug or leakage until proven otherwise.
 4. When combining data, check row counts before and after.

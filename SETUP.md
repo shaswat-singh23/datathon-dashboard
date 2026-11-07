@@ -35,7 +35,7 @@ Add a ticket: the "Task" form on GitHub (Issues, then New issue), `/ticket <idea
 ## Parallel sessions (Claude Code)
 Each ticket gets its own worktree, so sessions never touch each other's files:
 ```bash
-claude --worktree 12-load-data      # CLI, one terminal per ticket
+claude --worktree 3-q2-demand      # CLI, one terminal per ticket
 ```
 In VS Code, open a new Claude tab per ticket and run `/work`. It creates the worktree. Your `.env` is copied into each worktree automatically, so put `DATA_DIR=/absolute/path/to/your/clone/data` in it and every worktree reads the same data.
 
@@ -54,4 +54,17 @@ git push -u origin HEAD                                              # share, th
 Conflict? Ask your agent to resolve it, or ask the decider. Never force-push.
 
 ## Stack setup
-Filled in at kickoff.
+After `git pull`, from the repo root:
+```bash
+# 1. Install uv (once). macOS: brew install uv   |   other: curl -LsSf https://astral.sh/uv/install.sh | sh
+# 2. Get the data next to the repo (245 MB, not tracked by git):
+git clone --depth 1 https://github.com/tamu-datathon-org/dashboard-royale.git
+# 3. Point DATA_DIR at it:
+cp .env.example .env            # then set DATA_DIR=/absolute/path/to/datathon/dashboard-royale/data
+# 4. Install and prove it works:
+uv sync
+uv run pytest -q                # all tests pass (data tests skip if DATA_DIR is unset)
+uv run python -m royale.build   # rebuilds marts/ from DATA_DIR
+uv run streamlit run app.py     # opens the dashboard at http://localhost:8501
+```
+The one-line proof: `uv run pytest -q && uv run python -m royale.build` prints `passed` and one line per mart.
