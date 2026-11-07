@@ -7,6 +7,8 @@
 
 The official rubric allocates category weights, not points to individual defects. These deductions are this reviewer's diagnostic estimates. They do not describe actual historical judging or guarantee recovered points. Originality's ten points are omitted, leaving 90 possible. Earlier assessment of an older local checkout (74/90) is superseded by the synced-master review (83/90); the later audit credited existing Home/evidence/rank-sensitivity improvements from #81/#84. The earlier #81 audit's 90/90 was explicitly checklist coverage, not an award prediction; this review found additional runtime states.
 
+Rubric source: [organizer Participant Guide, sections 7–8](https://github.com/tamu-datathon-org/dashboard-royale/blob/main/GUIDE.md#7-how-youre-judged). Independent review read the local organizer clone and verified category weights and the four judge tasks against this source.
+
 | Criterion | Latest-master estimate | Why points were at risk | Measurable recovery target | Implementation status |
 |---|---:|---|---|---|
 | Analytical validity | 26/30 | −3: filtered event actuals include days absent from expected totals. −1: traffic counts move with unequal sensor coverage. | Every shown lift has matched_days = days and positive expected totals; expose crossings/covered hour and coverage for traffic. | Event comparator fixed; selected-period and monthly traffic rates/coverage use matched counter exposure. |
@@ -36,3 +38,5 @@ uv run pytest -q
 ```
 
 This session uses equivalent `.venv/bin/python -m pytest` commands because `uv` is not on PATH. Existing utility tests verify Home/all-page controls, Source, no raw reads and March 8's 23-hour gaming day. New tests verify incomplete/zero event baselines, matched ratios, rendered Jan 1–7/10/31 and zone states, frozen policy choices, fair slot counts, weighted demand coverage, incomplete weeks, interval availability and page drill/filter updates. Independent final review found no correctness blockers and all 21 expanded targeted tests passed. It considers all seven selected diagnostic deductions addressed (90/90 coverage of this audit's selected checks), explicitly not an actual judging-score prediction.
+
+Full implementation suite: **99 passed** in 49.45 seconds after all code changes. After syncing master, `DATA_DIR=/tmp/dashboard-86-empty-data .venv/bin/python -m pytest -q` gave **95 passed, four raw-data tests skipped**, in 49.26 seconds. `git diff --check` passed. The branch rebased onto current master without changes or conflicts. Anonymous live deployment and final submission checks remain outside these local results.
