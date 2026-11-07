@@ -1,4 +1,4 @@
-# datathon
+# Team repo
 
 Team repo. This file gets replaced by the submission README (a story ticket). `/ship-check` lists what it needs.
 

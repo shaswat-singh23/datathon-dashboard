@@ -8,7 +8,7 @@
 2. Log in so your agent can read and claim tickets: `gh auth login` (pick GitHub.com, HTTPS, log in with a browser).
 3. Accept the GitHub invite, then clone:
    ```bash
-   gh repo clone shaswat-singh23/datathon && cd datathon
+   gh repo clone shaswat-singh23/<this-repo> && cd <this-repo>
    git config --global user.name "Your Name"
    git config --global user.email "you@example.com"
    ```
