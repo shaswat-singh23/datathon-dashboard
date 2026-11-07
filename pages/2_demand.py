@@ -225,6 +225,74 @@ if zone != "All zones":
 else:
     st.caption("Pick a zone in **Zone drill** above to compare it with the rest of the floor week by week.")
 
+# ---- Context ---------------------------------------------------------------------------
+st.subheader("Context: weather and Las Vegas visitors")
+st.caption("This section always compares public context with whole-floor coin-in; the zone drill above "
+           "applies to the floor analysis only. The analysis period applies here too.")
+st.info("NOAA airport weather uses calendar dates, matched to the same gaming-date label. "
+        "Casino days run 06:00–06:00 local, so these are overlapping, not identical windows. "
+        "LVCVA visitors describe all Las Vegas, not this casino's guests. The tourism series was "
+        "published after 2025 (revision August 20, 2026). These are retrospective associations, "
+        "not causal effects or forecast inputs; future actual weather is also unavailable to a forecast.")
+try:
+    context = io.mart("q2_context")
+except FileNotFoundError as err:
+    st.warning(str(err))
+else:
+    context["gaming_date"] = pd.to_datetime(context["gaming_date"])
+    context = context[context["gaming_date"].dt.date.between(start, end)].copy()
+    if context.empty:
+        st.info("No public context in this period.")
+    else:
+        metric = st.selectbox("Context overlay", ["tmax_c", "prcp_mm", "visitors_per_calendar_day"],
+                              format_func=lambda x: {"tmax_c": "NOAA maximum temperature (°C)",
+                                  "prcp_mm": "NOAA precipitation (mm)",
+                                  "visitors_per_calendar_day": "LVCVA visitors / calendar day (monthly mean)"}[x])
+        cf = go.Figure()
+        cf.add_scatter(x=context["gaming_date"], y=context["coin_in_usd"], name="Whole-floor coin-in",
+                       line=dict(color=BLUE), hovertemplate="$%{y:,.0f}")
+        cf.add_scatter(x=context["gaming_date"], y=context[metric], name=metric,
+                       yaxis="y2", line=dict(color=ORANGE), connectgaps=False)
+        cf = style(cf, 340)
+        cf.update_layout(yaxis=dict(title="Coin-in ($)"),
+                         yaxis2=dict(title={"tmax_c": "Temperature (°C)", "prcp_mm": "Rain (mm)",
+                             "visitors_per_calendar_day": "Visitors / day"}[metric],
+                             overlaying="y", side="right", showgrid=False))
+        st.plotly_chart(cf, width="stretch")
+
+        rows = []
+        # Daily weather correlations vs a simple same-weekday baseline adjustment.
+        for col, label in [("tmax_c", "Maximum temperature"), ("prcp_mm", "Precipitation")]:
+            pairs = context[["coin_in_usd", col, "local_weekday"]].dropna().copy()
+            residual = pairs[["coin_in_usd", col]] - pairs.groupby("local_weekday")[["coin_in_usd", col]].transform("mean")
+            rows.append({"Context": label, "Unit": "paired days", "N": len(pairs),
+                         "Pearson r": pairs["coin_in_usd"].corr(pairs[col]) if len(pairs) >= 3 else float("nan"),
+                         "r after weekday adjustment": residual["coin_in_usd"].corr(residual[col]) if len(pairs) >= 3 else float("nan")})
+        # One pair per month: repeated daily tourism values are not independent observations.
+        monthly = context.groupby("month")[["coin_in_usd", "visitors_per_calendar_day"]].mean().dropna()
+        rows.append({"Context": "Las Vegas visitors / day", "Unit": "months", "N": len(monthly),
+                     "Pearson r": monthly["coin_in_usd"].corr(monthly["visitors_per_calendar_day"]) if len(monthly) >= 3 else float("nan"),
+                     "r after weekday adjustment": float("nan")})
+        st.dataframe(pd.DataFrame(rows), hide_index=True, width="stretch")
+        st.caption("Pearson r uses complete pairs; fewer than 3 pairs or constant values give no estimate. "
+                   "Weather adjustment subtracts each weekday's selected-period mean from both series "
+                   "(a simple weekday baseline). Tourism correlates monthly mean coin-in with monthly "
+                   "visitors / calendar day, with at most six independent months; partial months use only "
+                   "selected casino days. No p-values or causal claims: seasonality, events and serial "
+                   "dependence can explain correlations. Missing/quality-flagged weather stays missing; "
+                   "NOAA trace rain retains its source numeric value, not an exact zero-rain claim.")
+        with st.expander("Context Source"):
+            st.markdown("`marts/q2_context.parquet`, built with `uv run python -m royale.build q2_context`. "
+                        "Left joins: property_day.gaming_date = weather_daily.source_date; "
+                        "gaming month = city_visitation_monthly.month. Monthly visitor counts are divided "
+                        "by calendar days in the month, then repeated for display only. "
+                        "Duplicate join keys are rejected; all property dates are retained. "
+                        "See `findings/34-demand-context.md` for full-period correlations and checks.")
+            for col, label in [("weather_source_url", "NOAA GHCN-Daily, USW00023169"),
+                               ("tourism_source_url", "LVCVA revised 2025 tourism indicators")]:
+                for url in context[col].dropna().unique():
+                    st.markdown(f"[{label}]({url})")
+
 # ---- Source ----------------------------------------------------------------------------
 with st.expander("Source"):
     st.markdown(
@@ -245,7 +313,7 @@ One row per zone x gaming date (7 x 181 = 1,267 rows). Daily floor totals reconc
 | Event lift | event-day coin-in / mean coin-in of non-event days with the same weekday in the period, minus 1 |
 
 **Limitations.** Zone entries are sensor crossings, not unique people; offline counter hours are missing, not zero
-(coverage is in `zone_counter_coverage_hours`). Event comparisons rest on 3 to 7 days each. Real-world context
-(LVCVA visitation, weather) is not used here.
+(coverage is in `zone_counter_coverage_hours`). Event comparisons rest on 3 to 7 days each.
+The separate Context section uses `q2_context`; see its source expander and retrospective-use caveats.
 """
     )
