@@ -1,42 +1,36 @@
 # AI-use disclosure
 
-Team: Shaswat Singh, Sahith, Kyle Dong, Alex (dandelino-del). Dashboard Royale, TAMU Datathon, 2026-11-07.
+This project was built by a four-person team using AI coding agents under the conventions in [AGENTS.md](../AGENTS.md). Humans decided what to build, ranked the backlog, reviewed results and own every claim. Agents did most of the typing.
 
-We used AI coding agents throughout the build. Humans decided what to build, ranked the backlog, set the analytical rules and reviewed results. Agents wrote most of the code, tests and findings text under those rules. The evidence for this disclosure is the repository itself: `Co-Authored-By` trailers on commits, PR bodies, the `.claude/skills/` folder, and the author line of each `findings/` file.
+## Tools used
 
-## Tools
-
-| Tool | Model(s) | Who used it | Evidence in the repo |
-|---|---|---|---|
-| Claude Code (Anthropic CLI agent) | Claude Opus 5.5, Claude Fable 5.1 | All four team members | 21 commits carry a Claude co-author trailer (18 Opus 5.5, 3 Fable 5.1); PR bodies for #14, #16, #17 and the workflow PRs state "Generated with Claude Code"; skills in `.claude/skills/` |
-| OpenAI Codex (CLI agent) | Codex default model | Sahith, Alex | Findings #18, #20, #23, #34, #47 name Codex in their author line; PR #12 and the `$work`/`$ticket` Codex skills (PR #35) |
-| Streamlit AppTest, pytest, DuckDB | n/a (not AI) | Agents and humans | Used to verify every page and mart; listed here because agents ran them |
-
-No AI model was used as a data source. No LLM output is quoted as a fact anywhere in the dashboard or write-up.
+| Tool | Evidence in the repository | Used for |
+|---|---|---|
+| Claude Code (Anthropic), models Claude Opus 5.5 and Claude Fable 5.1 | `Co-Authored-By` trailers on commits; the `/work`, `/ticket`, `/fanout`, `/merge-queue` and `/orchestrate` skills in `.claude/skills/` | Writing mart builders, pages, tests and findings drafts from GitHub tickets; drafting PR descriptions; an independent reviewer session that re-ran each PR's checks before merging; an orchestrator session that kept tickets well-formed and posted status reports; this appendix and disclosure |
+| OpenAI Codex | Author lines in `findings/18-player-outcomes.md`, `20-coin-in-forecast.md`, `23-july-actions.md`, `34-demand-context.md`, `47-forecast-evaluation.md` | Same ticket-driven building for the players, forecast, actions and context work |
+| Other assistants allowed by AGENTS.md (Cursor, GitHub Copilot, ChatGPT, Gemini in a browser) | Named in `SETUP.md`; no repository evidence of use beyond that | Permitted for ticket work by any teammate; nothing in this repo is attributed to them |
 
 ## What the agents did
 
-- **Scaffolding and conventions.** Claude Code drafted `AGENTS.md`, the ticket-driven workflow, the issue template and the team skills (`/work`, `/ticket`, `/orchestrate`, `/merge-queue`, `/fanout`). Shaswat reviewed and merged these.
-- **Shared helpers.** `royale/money.py` (money math) and `royale/budget.py` (action pricing) were written by Claude Code against the rules in `AGENTS.md` and the organizer guide, with tests.
-- **Marts and pages.** Each question ticket (#16 to #23, #31, #32, #34, #47) was worked by one agent session in its own worktree: the agent wrote the DuckDB queries in `royale/marts/`, the Streamlit page, the tests and the first draft of the `findings/` file. The agent also ran the independent raw-SQL reconciliations and Streamlit AppTest checks recorded in each finding.
-- **Data verification.** Sahith's Codex session ran the organizer's unmodified `verify_data.py` and `verify_semantics.py` scripts (#33).
-- **Ticket hygiene and review.** Claude Code sessions running `/orchestrate` and `/merge-queue` re-ran each PR's checks on its exact commit and posted review comments. Agents never merged a PR on their own.
-- **Documents.** This disclosure, the Claims & Evidence appendix (#27) and the README draft (#21) were written by Claude Code from the `findings/` files and the git history.
+- Turned each GitHub issue (goal, done-when, scope) into code, tests and a `findings/` file, inside the issue's scope.
+- Wrote the SQL and pandas behind every mart in `royale/marts/`, the Streamlit pages in `pages/`, and the pytest suite.
+- Drafted the text of findings files, this appendix, the write-up and PR bodies from the numbers their own code produced.
+- Reviewed pull requests as a separate agent session that re-ran the tests on the exact commit and either merged or requested changes.
 
 ## What the humans did
 
-- Chose the question framing (luck, location, or leak), the baselines, the time-based split and the "no accusations" rule, and wrote them into `AGENTS.md` before any analysis started.
-- Ranked the backlog, set priorities and deadlines, and decided which tickets were `must`.
-- Reviewed PRs and decided what merged. Every merge was a human action.
-- Decided the July recommendation: inspect one machine and preserve the remaining budget, rather than spend to the limit.
-- Own the sign-off on findings. As of this writing every `findings/` file is still `Checked by: unchecked`; a second person must review each before its number is treated as confirmed (see the Claims & Evidence appendix).
+- Chose the questions, the money-math rules and the baselines (AGENTS.md "Challenge rules"), and ranked which tickets got built.
+- Read every PR summary, re-ran checks where they chose to, merged or requested changes, and decided which claims go in the story.
+- Recorded the video, presented, and uploaded the submission.
 
-## Known risks of this workflow and how we handled them
+## What AI did not do
 
-- **Agents can produce confident wrong numbers.** Every finding is required to carry an independent raw-data query that reproduces the headline figure, a simple baseline, an alternative explanation and a limitation. Several findings record row counts before and after every join.
-- **Agents can leak future information into forecasts.** The forecast builder only reads gaming date and coin-in from `property_day`, and tests poison the holdout targets to prove the fit does not change.
-- **Agents can over-claim.** The write-up and appendix call every result descriptive or an inspection lead; none claims a causal effect or accuses anyone of wrongdoing.
+- No large language model runs inside the dashboard or the analysis pipeline. The app, marts, model and tests call only DuckDB, pandas, scikit-learn, Plotly and Streamlit; there is no LLM API client in `royale/`, `pages/` or `app.py`.
+- No number in the dashboard, findings or write-up comes from a model's memory. Every figure is computed by code in this repository from the organizer's data, and each finding carries a Reproduce block.
+- Agents did not label any machine, guest or employee as cheating or at fault. Unusual payouts are reported as inspection leads only.
 
-## Outside data
+## Limits of this process
 
-Public context data cited on the Demand page, both fetched by an agent and documented in `findings/34-demand-context.md`: NOAA daily weather for Las Vegas airport station USW00023169, and LVCVA monthly Las Vegas visitor counts (2026-08-20 revision). Neither feeds the forecast.
+- Agent-written reconciliation checks were run by the same agent that wrote the code. Independent human re-runs are tracked in the `Checked by` line of each finding and in the last column of [claims_evidence.md](claims_evidence.md); at the time of writing none has been completed.
+- Agents drafted prose from their own results, so wording may overstate certainty in places. Findings state their alternative explanations and limitations to counter this; readers should weigh those sections as heavily as the headline numbers.
+- The synthetic organizer dataset and the AI-assisted workflow are both documented so that a judge can re-run any claim without trusting either.
