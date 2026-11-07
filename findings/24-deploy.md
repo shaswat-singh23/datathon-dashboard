@@ -1,9 +1,37 @@
 # Public dashboard on Streamlit Community Cloud
 - Issue: #24 | Author: Kyle | Time: 15:05
 - Claim: the dashboard deploys from `master` with committed marts only; no raw data, secrets or `DATA_DIR` are needed on the server.
-- Evidence: with `DATA_DIR` pointed at an empty directory, `app.py` and all 7 pages in `pages/` render with zero exceptions under Streamlit AppTest, on both Python 3.13 (local) and Python 3.12 (Community Cloud default) using the locked dependency set (`uv sync --locked --python 3.12`: 45 packages). Script: `smoke_pages.py` (session scratchpad), result `FAILURES 0`. `marts/` is 12 MB across 11 parquet files, each under 5 MB.
+- Evidence: with `DATA_DIR` pointed at an empty directory, `app.py` and all 7 pages in `pages/` render with zero exceptions under Streamlit AppTest, on both Python 3.13 (local) and Python 3.12 (Community Cloud default) using the locked dependency set (`uv sync --locked --python 3.12`: 45 packages). Script: the Reproduce block below, result `FAILURES 0` on both versions. `marts/` is 12 MB across 11 parquet files, each under 5 MB.
 - So what: judges open one link and every page works; the organizer data never leaves our machines.
 - Checked by: unchecked
+
+## Reproduce
+
+Pages are opened through `app.py` and `switch_page`, which is how Community Cloud serves them. Run standalone, `pages/6_actions.py` raises `StreamlitPageNotFoundError` from `st.page_link` under AppTest; that is a test-harness artifact, not a deploy bug.
+
+```python
+# Save anywhere as smoke.py, then from the repo root: uv run python smoke.py
+# (DATA_DIR is overridden below; AppTest needs absolute paths)
+import os, sys, tempfile
+from pathlib import Path
+os.environ["DATA_DIR"] = tempfile.mkdtemp()      # no raw data, like Community Cloud
+from streamlit.testing.v1 import AppTest
+root = Path.cwd()
+failures = 0
+at = AppTest.from_file(str(root / "app.py"), default_timeout=120).run()
+print("app.py", "ok" if not at.exception else "FAIL")
+failures += bool(at.exception)
+for page in sorted((root / "pages").glob("*.py")):
+    at = AppTest.from_file(str(root / "app.py"), default_timeout=120).run()
+    at.switch_page(f"pages/{page.name}").run()
+    bad = list(at.exception) + list(at.error)
+    failures += bool(bad)
+    print(page.name, "ok" if not bad else "FAIL", [str(b.value)[:200] for b in bad])
+print("FAILURES", failures)
+sys.exit(1 if failures else 0)
+```
+
+For the Python 3.12 run: `UV_PROJECT_ENVIRONMENT=/tmp/venv312 uv sync --locked --python 3.12`, then the same script with `uv run --python 3.12 --locked`.
 
 ## Live URL
 
