@@ -9,6 +9,7 @@ import streamlit as st
 from royale.evidence import render_evidence
 
 from royale import io
+from royale.demand import event_comparison, traffic_summary
 
 st.set_page_config(page_title="Demand: The Gilded Ace", page_icon="♠", layout="wide")
 
@@ -100,9 +101,21 @@ k1, k2, k3, k4 = st.columns(4)
 k1.metric("Coin-in per day", f"${daily['coin_in_usd'].sum() / ndays / 1e3:,.0f}k",
           help=f"Sum of coin-in over {ndays} gaming days, {scope_name}.")
 k2.metric("Occupied machine-hours per day", f"{daily['occupied_hours'].sum() / ndays:,.0f}")
-k3.metric("Zone entries per day", f"{daily['zone_entries'].sum() / ndays:,.0f}",
+k3.metric("Observed zone entries per day", f"{daily['zone_entries'].sum() / ndays:,.0f}",
           help="Counter crossings, not unique people. Offline counter hours are missing, not zero.")
 k4.metric("Coin-in per available machine-hour", f"${ratio(daily['coin_in_usd'], daily['available_hours']):,.1f}")
+traffic = traffic_summary(scope)
+t1, t2 = st.columns(2)
+t1.metric("Entries / covered sensor-hour", 'Unavailable' if traffic['entries_per_covered_hour'] is None
+          else f"{traffic['entries_per_covered_hour']:,.1f}")
+t2.metric("Counter coverage", 'Unavailable' if traffic['counter_coverage'] is None
+          else f"{traffic['counter_coverage']:.1%}")
+st.caption(f"{traffic['covered_sensor_hours']:,.1f} usable covered sensor-hours / "
+           f"{traffic['scheduled_sensor_hours']:,.1f} scheduled zone-sensor hours in this period and zone selection. "
+           "Rate = observed crossings / covered sensor-hours, pooled across zone-days with both counts and "
+           "positive coverage. Scheduled hours follow the gaming calendar, including DST. "
+           "Crossings are not unique visitors. Normalization does not recover missed crossings or establish "
+           "that offline hours had the same traffic; observed entries/day can change with coverage.")
 
 # ---- Trend -----------------------------------------------------------------------------
 st.subheader(f"Coin-in trend, {scope_name}")
@@ -133,9 +146,13 @@ mo["entries_per_day"] = mo["entries"] / mo["days"]
 mo["coin_in_per_avail_hr"] = mo["coin_in"] / mo["available"]
 mo["coin_in_per_day_mom"] = mo["coin_in_per_day"].pct_change()
 mo["entries_per_day_mom"] = mo["entries_per_day"].pct_change()
+monthly_traffic = pd.DataFrame({month: traffic_summary(rows) for month, rows in scope.groupby('month')}).T
+mo = mo.join(monthly_traffic, validate='one_to_one')
+mo['entries_per_covered_hour_mom'] = mo.entries_per_covered_hour.pct_change()
 st.dataframe(
     mo[["days", "coin_in", "coin_in_per_day", "coin_in_per_day_mom", "occupied", "occupied_per_day",
-        "entries", "entries_per_day", "entries_per_day_mom", "coin_in_per_avail_hr"]],
+        "entries", "entries_per_day", "entries_per_day_mom", "entries_per_covered_hour",
+        "entries_per_covered_hour_mom", "counter_coverage", "covered_sensor_hours", "coin_in_per_avail_hr"]],
     width="stretch",
     column_config={
         "days": st.column_config.NumberColumn("Days"),
@@ -144,9 +161,13 @@ st.dataframe(
         "coin_in_per_day_mom": st.column_config.NumberColumn("MoM (per day)", format="percent"),
         "occupied": st.column_config.NumberColumn("Occupied hrs", format="%,.0f"),
         "occupied_per_day": st.column_config.NumberColumn("Occupied hrs / day", format="%,.0f"),
-        "entries": st.column_config.NumberColumn("Zone entries", format="%,.0f"),
-        "entries_per_day": st.column_config.NumberColumn("Entries / day", format="%,.0f"),
+        "entries": st.column_config.NumberColumn("Observed zone entries", format="%,.0f"),
+        "entries_per_day": st.column_config.NumberColumn("Observed entries / day", format="%,.0f"),
         "entries_per_day_mom": st.column_config.NumberColumn("MoM (per day)", format="percent"),
+        "entries_per_covered_hour": st.column_config.NumberColumn("Entries / covered sensor-hour", format="%.1f"),
+        "entries_per_covered_hour_mom": st.column_config.NumberColumn("MoM (per covered hour)", format="percent"),
+        "counter_coverage": st.column_config.NumberColumn("Counter coverage", format="percent"),
+        "covered_sensor_hours": st.column_config.NumberColumn("Covered sensor-hours", format="%.1f"),
         "coin_in_per_avail_hr": st.column_config.NumberColumn("Coin-in / avail. hr", format="$%.1f"),
     },
 )
@@ -166,25 +187,21 @@ with left:
 
 with right:
     st.subheader("Event days vs same weekday")
-    base = plain.groupby("local_weekday")["coin_in_usd"].mean()
-    ev = daily[daily["events_active"].notna()].copy()
-    if ev.empty or base.empty:
-        st.info("No event days (or no non-event baseline) in this period.")
+    et = event_comparison(daily)
+    if et.empty:
+        st.info("No event days in this period.")
     else:
-        ev["expected"] = ev["local_weekday"].map(base)
-        et = (ev.groupby("events_active")
-              .agg(days=("gaming_date", "size"), first_day=("gaming_date", "min"),
-                   coin_in_per_day=("coin_in_usd", "mean"), actual=("coin_in_usd", "sum"),
-                   expected=("expected", "sum")))
-        et["lift"] = et["actual"] / et["expected"] - 1
-        st.dataframe(et.sort_values("first_day")[["first_day", "days", "coin_in_per_day", "lift"]],
+        st.dataframe(et[["first_day", "days", "matched_days", "coin_in_per_day", "lift", "comparison"]],
                      width="stretch",
                      column_config={"first_day": st.column_config.DateColumn("Starts", format="MMM D"),
                                     "days": "Days",
+                                    "matched_days": "Days with weekday baseline",
                                     "coin_in_per_day": st.column_config.NumberColumn("Coin-in / day", format="$%,.0f"),
                                     "lift": st.column_config.NumberColumn("vs same weekday", format="percent")})
-        st.caption("Lift = event-day coin-in / mean coin-in of non-event days with the same weekday, minus 1. "
-                   "3 to 7 days per event: treat as directional.")
+        st.caption("Lift = total event coin-in / sum of non-event same-weekday means, minus 1. "
+                   "All baselines use this period and zone. Lift is unavailable unless every event day "
+                   "has a matching non-event weekday and expected coin-in is positive; widen the period "
+                   "to add comparisons. Small samples, seasonality and overlapping events prevent causal attribution.")
 
 # ---- Zone drill ------------------------------------------------------------------------
 st.subheader("Zones: coin-in per available machine-hour")
@@ -223,7 +240,8 @@ if zone != "All zones":
     zk1.metric("Occupancy (occupied / available hrs)", f"{ratio(z_in['occupied_hours'], z_in['available_hours']):.1%}")
     zk2.metric("Coin-in per occupied hour", f"${ratio(z_in['coin_in_usd'], z_in['occupied_hours']):,.0f}",
                help="Spend intensity once a guest sits down. Flat while occupancy falls = fewer guests, same bets.")
-    zk3.metric("Zone entries per day", f"{z_in['zone_entries_observed'].sum() / z_in['gaming_date'].nunique():,.0f}")
+    zk3.metric("Zone entries / covered sensor-hour", 'Unavailable' if traffic['entries_per_covered_hour'] is None
+               else f"{traffic['entries_per_covered_hour']:,.1f}")
 else:
     st.caption("Pick a zone in **Zone drill** above to compare it with the rest of the floor week by week.")
 
@@ -297,7 +315,8 @@ else:
 
 # ---- Source ----------------------------------------------------------------------------
 with st.expander("Source"):
-    render_evidence(['findings/16-demand-changes.md', 'findings/34-demand-context.md'], key='2_demand')
+    render_evidence(['findings/16-demand-changes.md', 'findings/86-dashboard-judge.md',
+                     'findings/34-demand-context.md'], key='2_demand')
     st.markdown(
         """
 **Mart:** `marts/q2_demand.parquet`, built by `royale/marts/q2_demand.py` (`uv run python -m royale.build q2_demand`).
@@ -308,12 +327,14 @@ One row per zone x gaming date (7 x 181 = 1,267 rows). Daily floor totals reconc
 |---|---|
 | Coin-in, occupied hours, available hours | `SUM(coin_in_usd)`, `SUM(occupied_hours)`, `SUM(available_hours)` from `prepared_daily_view WHERE location_id IS NOT NULL`, grouped by zone and day |
 | Zone entries | `zone_entries_observed`, taken once per zone-day (it repeats on every machine row), summed over zones |
+| Entries / covered sensor-hour | SUM(observed entries) / SUM(coverage hours), using zone-days with observed counts and positive coverage; `royale.demand.traffic_summary` |
+| Counter coverage | SUM(usable covered sensor-hours) / SUM(scheduled_seconds / 3600) over selected zone-days, not machine-hours; offline/missing pairs contribute no covered hours |
 | Per day | period sum / number of gaming days |
 | Coin-in per available machine-hour | `SUM(coin_in_usd) / SUM(available_hours)` (ratio of sums) |
 | Occupancy | `SUM(occupied_hours) / SUM(available_hours)` |
 | Event windows | `property_day.events_active` (from the `events` table) |
 | Walkway closure | `floor_walkways.closed_from_utc / closed_to_utc` overlapped with `calendar_day` gaming-day bounds |
-| Event lift | event-day coin-in / mean coin-in of non-event days with the same weekday in the period, minus 1 |
+| Event lift | SUM(event coin-in) / SUM(non-event same-weekday means), minus 1; suppressed unless every event day is matched and expected total is positive (`royale.demand.event_comparison`) |
 
 **Limitations.** Zone entries are sensor crossings, not unique people; offline counter hours are missing, not zero
 (coverage is in `zone_counter_coverage_hours`). Event comparisons rest on 3 to 7 days each.

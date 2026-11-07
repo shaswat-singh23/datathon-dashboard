@@ -10,6 +10,7 @@ from royale.evidence import render_evidence
 from royale import io
 from royale.model import FITTED_KIND, KINDS, LABELS, score_forecasts
 from royale.overview import weekday_profile
+from royale.planning import evaluate_planning
 
 st.set_page_config(page_title='Coin-in forecast: The Gilded Ace', page_icon='♠', layout='wide')
 st.title('Can the calendar improve a daily demand forecast?')
@@ -57,8 +58,8 @@ if gap >= 0:
 else:
     st.info(f'The fitted weekday + trend regression beats the weekday-mean baseline by '
             f'${-gap:,.2f}/day on this holdout.')
-st.info('Decision: use the weekday profile as a starting point for staffing timing, '
-        'and use the holdout MAE to describe typical observed error. Check whether weekday scheduling beats constant staffing in a future trial. '
+st.info('Decision: use the weekday profile to nominate busy days for operational review, '
+        'then inspect the equal-resource planning comparison below. '
         'Coin-in is a demand proxy; this forecast does not estimate staffing needs or promotion lift directly. '
         'The lowest error in this one holdout does not establish future superiority.')
 
@@ -87,7 +88,7 @@ with st.expander('Daily actuals and frozen predictions'):
     st.dataframe(view, hide_index=True)
 st.caption('Uncertainty: errors may be correlated over time, and events or demand shifts can break calendar patterns. '
            'MAE describes this holdout’s observed error; it is not a prediction interval or a guaranteed error bound.')
-st.subheader('A calendar profile for a staffing trial')
+st.subheader('Training calendar profile')
 profile = weekday_profile(data)
 st.dataframe(profile, column_config={
     'weekday_prediction_usd': st.column_config.NumberColumn('Training weekday mean coin-in / day', format='dollar'),
@@ -97,15 +98,57 @@ st.dataframe(profile, column_config={
 st.caption('Fixed January–April estimates recovered from the frozen forecast columns, Monday to Sunday. '
            'The evaluation-period filter does not change this training profile. '
            'Wagers do not translate directly into staff hours, so these are demand comparisons rather than headcounts.')
-st.markdown('**Prospective test:** keep total weekly staff hours fixed and compare weekday-profile allocation '
-            'with constant daily allocation in a randomized sequence of weeks. Before starting, choose the '
-            'minimum worthwhile reduction in fault waiting hours per 1,000 scheduled machine-hours and the '
-            'maximum acceptable change in availability. Report both arms, their difference and uncertainty. '
-            'Adopt the profile only if it clears that predeclared target without breaching the availability '
-            'guardrail. No staffing saving or revenue lift is assumed from this retrospective forecast.')
-
+st.subheader('Decision test: when to schedule limited operational reviews?')
+st.write('Planning scenario: reserve a fixed number of equal-length floor-service review slots each week. '
+         'Use each frozen forecast to prioritize the days expected to be busiest. The same number of slots '
+         'allocated uniformly across the week is the neutral baseline. This tests alignment with demand; '
+         'coin-in alone cannot establish staffing requirements, labor savings or increased revenue.')
+slots = st.selectbox('Review days per complete week', [1, 2, 3], index=1)
+planning, schedules = evaluate_planning(view, slots)
+if planning.empty:
+    st.info('Include a complete Monday–Sunday week to evaluate planning. Partial weeks are excluded from every policy.')
+else:
+    st.caption('Days are chosen using frozen predictions only, before looking at actual demand. '
+               'Within each complete Monday–Sunday week, select the highest predicted days; ties use the earlier date. '
+               'The constant forecast therefore selects Monday onward. A uniform allocation uses the same slot '
+               'count and has an exact expected demand share of k/7. Actual coin-in is used only for evaluation. '
+               'Boundary weeks and weeks missing a date are excluded for all policies. '
+               'One, two and three slots are sensitivity scenarios, not choices optimized on this holdout.')
+    st.dataframe(planning[['model', 'weeks', 'review_days', 'demand_share', 'uniform_share',
+                          'gain_pp', 'gain_low_pp', 'gain_high_pp']], hide_index=True,
+                 column_config={
+                     'model': 'Frozen forecast policy', 'weeks': 'Complete weeks', 'review_days': 'Review-day slots',
+                     'demand_share': st.column_config.NumberColumn('Observed demand on review days', format='percent'),
+                     'uniform_share': st.column_config.NumberColumn('Uniform allocation: expected share', format='percent'),
+                     'gain_pp': st.column_config.NumberColumn('Gain vs uniform (percentage points)', format='%.2f'),
+                     'gain_low_pp': st.column_config.NumberColumn('Gain 95% low (pp)', format='%.2f'),
+                     'gain_high_pp': st.column_config.NumberColumn('Gain 95% high (pp)', format='%.2f'),
+                 })
+    chosen = schedules[(schedules.kind == 'weekday') & schedules.priority_day]
+    names = sorted(chosen.gaming_date.dt.day_of_week.unique())
+    st.info('Operational candidate: the training-only weekday rule selects '
+            + ', '.join(calendar.day_name[int(day)] for day in names)
+            + f' for {slots} weekly review-day slots. Validate this schedule prospectively before changing staffing. '
+              'The retrospective comparison does not prove a service or financial benefit.')
+    st.caption('Coverage is total actual coin-in on selected days / total actual coin-in on all eligible days '
+               '(ratio of sums). Intervals resample paired complete weeks 2,000 times, seed 86, and require '
+               'three weeks; they assume exchangeable weeks and omit regime changes and policy-selection uncertainty. '
+               'They are exploratory demand-alignment intervals, not July forecasts or treatment effects.')
+    with st.expander('Review-day schedule and measurement plan'):
+        schedule_kind = st.selectbox('Planning forecast drill', list(KINDS), index=1, format_func=LABELS.get)
+        st.dataframe(schedules.loc[schedules.kind == schedule_kind,
+                                  ['gaming_date', 'week', 'priority_day', 'coin_in_usd']], hide_index=True,
+                     column_config={'coin_in_usd': st.column_config.NumberColumn('Observed coin-in ($)', format='dollar')})
+        st.write('Before a July trial, record slot length, reviewer hours and service demand measures. '
+                 'Keep total review hours equal; randomize comparable weeks between the weekday schedule '
+                 'and uniform allocation. Measure service requests handled and wait time per reviewer-hour. '
+                 'Adopt only if the prespecified service target improves without worse waits on other days. '
+                 'No dollar benefit is assigned until intervention data exist.')
+    st.markdown('[Planning evidence, baseline and limitations]('
+                'https://github.com/shaswat-singh23/datathon-dashboard/blob/master/findings/86-demand-planning.md)')
 with st.expander('Source and reproducibility'):
-    render_evidence(['findings/47-forecast-evaluation.md', 'findings/20-coin-in-forecast.md'], key='7_model')
+    render_evidence(['findings/47-forecast-evaluation.md', 'findings/86-demand-planning.md',
+                     'findings/86-dashboard-judge.md', 'findings/20-coin-in-forecast.md'], key='7_model')
     st.markdown('**Mart:** `marts/q7_forecast.parquet`, one row per held-out gaming date. '
                 '**Builder:** `royale/marts/q7_forecast.py`, selecting gaming_date and coin_in_usd from property_day without joins. '
                 '**Model:** `royale/model.py`; fit filters to Jan–Apr internally and predict consumes only dates. '
@@ -113,3 +156,7 @@ with st.expander('Source and reproducibility'):
                 '**Evidence:** [findings/47-forecast-evaluation.md](https://github.com/shaswat-singh23/datathon-dashboard/blob/master/findings/47-forecast-evaluation.md), '
                 'including reconciliation of property totals against on-floor machine meters.')
     st.code('DATA_DIR=/path/to/data uv run python -m royale.build q7_forecast\nuv run pytest tests/test_model.py -q')
+    st.markdown('**Planning calculations:** `royale/planning.py`, reading the same frozen forecast mart. '
+                '`choose_days` consumes dates and predictions only; `evaluate_planning` joins actuals afterward. '
+                'The policy is a new retrospective diagnostic, specified after the original forecast holdout '
+                'was examined; prospective validation is required. Tests poison actuals and verify unchanged day choices.')
