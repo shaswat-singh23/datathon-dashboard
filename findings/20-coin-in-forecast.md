@@ -3,7 +3,7 @@
 - Claim: The weekday-mean model reduces May–June daily coin-in MAE by 68.52% against a constant training-mean baseline. Adding a linear trend performs worse than weekday means alone in this holdout.
 - Evidence: `DATA_DIR=/path/to/organizer/data uv run python -m royale.build q7_forecast` and the reproduction command below, using organizer release 0.9.0-draft property_day, downloaded 2026-11-07.
 - So what: Use weekday demand patterns rather than a constant daily demand assumption when preparing staffing or promotion schedules, then validate the schedule in a future operational trial. The forecast does not estimate promotion lift or required staffing directly.
-- Checked by: unchecked
+- Checked by: Kyle (Claude Code, Fable 5.1), 2026-11-07 16:26
 
 ## Full held-out result
 

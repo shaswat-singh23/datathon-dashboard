@@ -3,7 +3,7 @@
 - Claim: Monthly top-10% active carded players account for 39.01–39.99% of wagers and 39.29–40.58% of gross player losses. Monthly shares ahead range from 15.78% to 16.81%.
 - Evidence: `DATA_DIR=/path/to/organizer/data uv run python -m royale.build q4_players`, followed by the reproduction command below. Source is organizer release 0.9.0-draft, player_period (downloaded 2026-11-07).
 - So what: Tracked activity is concentrated compared with an equal-share baseline. Report the winners alongside losses. Use these summaries to understand exposure and outcomes, not to encourage heavy losers to gamble more.
-- Checked by: unchecked
+- Checked by: Kyle (Claude Code, Fable 5.1), 2026-11-07 16:26
 
 ## Totals and baseline
 
