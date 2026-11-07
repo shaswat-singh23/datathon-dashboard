@@ -1,25 +1,21 @@
-# data: raw and processed stay local, shared via Drive
-/data/*
-!/data/README.md
-
-# personal scratch
-notebooks/
-.ipynb_checkpoints/
-
-# python
-.venv/
-__pycache__/
-*.pyc
-.ruff_cache/
-
-# model artifacts
-artifacts/
-catboost_info/
+# data stays local, shared via Drive
+/data/
 
 # secrets
 .env
 .env.*
-.streamlit/secrets.toml
+!.env.example
+
+# environments and caches (any stack)
+.venv/
+venv/
+__pycache__/
+*.pyc
+node_modules/
+.ipynb_checkpoints/
+
+# personal scratch
+scratch/
 
 # personal Claude Code settings
 .claude/settings.local.json

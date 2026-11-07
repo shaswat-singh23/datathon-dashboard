@@ -2,6 +2,8 @@
 name: triage
 description: Rank datathon challenges and pick one. Use right after challenges are released, when the user pastes or links challenge descriptions.
 argument-hint: "[pasted challenges, links, or a file path]"
+model: opus
+effort: high
 disable-model-invocation: true
 ---
 

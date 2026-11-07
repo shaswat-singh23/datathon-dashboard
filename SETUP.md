@@ -1,58 +1,38 @@
-# Setup (do tonight, about 15 minutes)
+# Setup
 
-## 1. Everyone
-1. Install git and VS Code.
-2. Install uv:
-   - macOS / Linux: `curl -LsSf https://astral.sh/uv/install.sh | sh`
-   - Windows (PowerShell): `powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"`
-3. Accept the GitHub invite, then:
+## Tonight (everyone, about 10 minutes)
+1. Install git and VS Code. On Windows, work inside WSL2 if you have it.
+2. Accept the GitHub invite, then clone:
    ```bash
-   git clone <repo-url> && cd <repo>
-   uv sync                                # installs Python 3.12 and every package
-   uv run python scripts/verify_env.py    # every line should say PASS
+   git clone <repo-url> && cd datathon
    ```
-   macOS: if lightgbm fails, run `brew install libomp` and rerun.
-4. Open the folder in VS Code. When it asks for an interpreter, pick `.venv`.
+3. Make sure git knows who you are:
+   ```bash
+   git config --global user.name "Your Name"
+   git config --global user.email "you@example.com"
+   ```
+4. Skim AGENTS.md (2 minutes). These are the team rules, and AI tools read them.
 5. Join the Devpost team, the Discord channel, and the Drive folder.
 
-Venue wifi will be bad. Doing this tonight is the point.
+The stack (languages, packages) gets set up after we pick a challenge. Its commands will be added to this file at kickoff.
 
-## 2. AI tools
-- **Claude Code (VS Code):** Extensions view, search "Claude Code", install the one by Anthropic, sign in. Open this repo folder and trust it when asked. Repo skills: `/triage`, `/eda`, `/baseline`, `/ship-check`.
-- **Cursor, Copilot, Codex:** they read `AGENTS.md`. Nothing to do.
-- **ChatGPT or claude.ai in a browser:** paste `AGENTS.md` at the start of the chat.
+## AI tools
+- **Claude Code (VS Code):** install the "Claude Code" extension by Anthropic, sign in, open this folder, and trust it. Repo skills: `/triage`, `/kickoff`, `/ship-check`.
+- **Cursor, Copilot, Codex:** they read AGENTS.md. Nothing to do.
+- **ChatGPT, Gemini, or claude.ai in a browser:** paste AGENTS.md at the start of the chat.
 
-Whatever tool you use, the rules in AGENTS.md apply. The two that matter most: print row counts around every join, and compare every model to a naive baseline.
-
-## 3. Dry run (Claude driver, 10 minutes)
-```bash
-uv run python scripts/make_sample_data.py
-```
-In Claude Code:
-1. `/eda data/raw/_sample`
-2. `/baseline units sales`
-3. Check the answer key below. Did it catch all 5? If not, tighten the skill.
-4. `rm -rf data/raw/_sample EDA.md src/models/baseline_units.py` and reset FINDINGS.md.
-
-## 4. Deploy once tonight
-1. Push to GitHub.
-2. share.streamlit.io, then Create app. Repo: this one, branch `main`, file `app/app.py`.
-3. It installs from `app/requirements.txt`. After adding a package the app needs, add it there too, or regenerate:
-   `uv export --no-dev --no-hashes --no-emit-project -o app/requirements.txt`
-4. The deployed app only sees `app/data/`. With no data it shows a "No data found" message. That's expected.
+## API keys
+- Keys go in `.env` at the repo root, which git ignores. Code reads them from environment variables.
+- Never commit a key, paste one into code, or share one in chat. If one leaks, revoke it right away.
+- Rate limits are per project, so each person making their own free key means more total capacity than sharing one.
 
 ## Git cheat sheet
 ```bash
 git switch -c <name>/<topic>            # start work
 git add -A && git commit -m "what"      # save
-git pull origin main                    # get teammates' work into your branch
-git push -u origin HEAD                 # share; merge to main on GitHub
+git pull origin master                    # get teammates' work into your branch
+git push -u origin HEAD                 # share; merge to master on GitHub
 ```
 Conflict? Ask the Claude driver. Don't force-push.
 
-## Dry-run answer key
-1. products.csv has a duplicated product_id (17). A naive sales-products join fans out rows.
-2. sales.revenue = units * price. It leaks the target when predicting units.
-3. price has -1 sentinels. units has negatives (returns).
-4. store 9 is in sales but not in stores.csv.
-5. store 3 has no sales from Mar 4 to Mar 27.
+<!-- kickoff adds a "Stack setup" section below -->
