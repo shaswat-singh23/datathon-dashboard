@@ -45,6 +45,74 @@ st.info('Classifications are inspection priorities, not causal findings. “Luck
         'rescued by exposure adjustment. A location flag compares against other machines in the same zone; '
         'game mix and demand can confound it. A weak flag supports further investigation, not automatic replacement.')
 
+st.subheader('Leak: inspect, not proof')
+st.caption('Payout ratios are compared with configured RTP using each game’s payout variance and actual '
+           'squared bets. The period and bank selections above also apply here.')
+try:
+    from royale.marts.q1_leak import Z_THRESHOLD, summarize as summarize_leak, volatility_check
+
+    leak_daily = io.mart('q1_leak')
+except FileNotFoundError as exc:
+    st.warning(str(exc))
+else:
+    leak_daily['gaming_date'] = pd.to_datetime(leak_daily.gaming_date)
+    leak_selected = leak_daily[leak_daily.gaming_date.dt.date.between(start, end)]
+    if bank != 'All banks':
+        leak_selected = leak_selected[leak_selected.bank_id == bank]
+    if leak_selected.empty:
+        st.info('No payout-screen data in this selection.')
+    else:
+        leak = summarize_leak(leak_selected)
+        leak['manager_raw_rank'] = ranked.raw_rank.reindex(leak.index)
+        candidates = leak[leak.inspection_candidate]
+        st.metric('Payout inspection candidates', f'{len(candidates)} / {leak.payout_z.notna().sum()} tested')
+        st.caption(f'Flag: configured RTP falls outside observed RTP ± {Z_THRESHOLD:g} standard errors. '
+                   'Positive payout z means higher payouts than configured; negative means lower payouts. '
+                   'Normal intervals are approximate and are not clipped to 0–100%.')
+        if candidates.empty:
+            st.info('No machine crosses the payout-inspection threshold in this selection.')
+        else:
+            st.dataframe(candidates[[
+                'manager_raw_rank', 'game', 'volatility_class', 'paid_spins', 'available_hours',
+                'observed_rtp', 'configured_rtp', 'ci_lower', 'ci_upper', 'payout_z',
+                'direction', 'excess_payout_per_hour',
+            ]], width='stretch', column_config={
+                name: st.column_config.NumberColumn(name.replace('_', ' ').title(), format='percent')
+                for name in ['observed_rtp', 'configured_rtp', 'ci_lower', 'ci_upper']
+            })
+        st.markdown('**Volatility check** — compare the variance-adjusted screen with the simple '
+                    'per-machine 95% screen (|z| > 1.96). Rates use testable machines only.')
+        st.dataframe(volatility_check(leak), width='stretch', column_config={
+            name: st.column_config.NumberColumn(name.replace('_', ' ').title(), format='percent')
+            for name in ['flag_rate', 'unadjusted_95_rate', 'median_rtp_se']
+        })
+        st.info('Inspect payout meters, game configuration and service records; these are leads, not proof '
+                'of a leak or wrongdoing. The ±3.8 rule gives an approximate two-sided familywise error '
+                'bound below 5% across 310 machines under independent normal assumptions. Repeated period '
+                'or bank searches invalidate that guarantee. Short samples and heavy tails weaken the '
+                'normal approximation. Volatility-class rates are descriptive; they do not establish '
+                'equal false-positive rates or a cause. Zero-play/zero-variance rows are not tested.')
+        with st.expander('Leak source and method'):
+            st.markdown('''**Mart:** `marts/q1_leak.parquet`, one active on-floor machine-day per row,
+built with `uv run python -m royale.build q1_leak`. `SQL`, `summarize` and
+`volatility_check` in `royale/marts/q1_leak.py` define the query and period calculations.
+Locations come from placements at gaming-day start; off-floor rows are excluded.
+
+- Observed RTP = SUM(payout_cents) / SUM(coin_in_cents).
+- Configured RTP = 1 − SUM(theo_cents) / SUM(coin_in_cents), wager-weighted across configurations.
+- V = SUM(sum_bet_squared × payout_multiplier_variance), in cents squared.
+  Squared bets already sum over paid spins; multiplying by spins again would overstate variance.
+- RTP standard error = sqrt(V) / SUM(coin_in_cents); interval = observed RTP ± 3.8 × standard error.
+- Payout z = −house-win luck z from `royale.money`; a positive value means excess payouts.
+- Excess payout/hour = (SUM(theo_cents) − SUM(house_win_cents)) / 100 / available hours.
+- Manager rank is the raw total-house-win baseline above, recomputed for the same selection.
+
+Daily mart intervals are diagnostic. Period intervals are recomputed from summed meters and
+variances, never averaged. Mixed volatility configurations are reported as `mixed`.
+The interval assumes the supplied game variance is correct and spins are independent;
+it does not measure the chance of wrongdoing. See `findings/32-leak-screen.md`.
+''')
+
 st.subheader('Location: the same game in different places')
 try:
     locations = location.complete_months(io.mart('q1_location'), start, end)
