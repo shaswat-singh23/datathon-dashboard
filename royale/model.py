@@ -13,9 +13,11 @@ TRAIN_START = pd.Timestamp('2025-01-01')
 TRAIN_END = pd.Timestamp('2025-04-30')
 TEST_START = pd.Timestamp('2025-05-01')
 TEST_END = pd.Timestamp('2025-06-30')
-KINDS = ('constant', 'weekday', 'weekday_trend')
-LABELS = {'constant': 'Constant training mean (baseline)', 'weekday': 'Weekday mean',
-          'weekday_trend': 'Weekday + linear trend'}
+FITTED_KIND = 'weekday_trend'
+KINDS = ('constant', 'weekday', FITTED_KIND)
+LABELS = {'constant': 'Constant training mean (baseline)',
+          'weekday': 'Weekday mean (seasonal baseline)',
+          FITTED_KIND: 'Weekday + linear trend (fitted)'}
 
 
 def _dates(frame: pd.DataFrame) -> pd.DatetimeIndex:
@@ -88,3 +90,16 @@ def fit(frame: pd.DataFrame, kind: str = 'weekday') -> Forecast:
 def predict(model: Forecast, frame: pd.DataFrame) -> np.ndarray:
     """Functional counterpart to Forecast.predict."""
     return model.predict(frame)
+
+
+def score_forecasts(frame: pd.DataFrame) -> pd.Series:
+    """MAE in USD/day for frozen forecasts over exactly the supplied rows.
+
+    Filtering for a selected period or calendar drill happens before scoring.
+    This function never fits a model or changes any forecast.
+    """
+    errors = frame[[f'{kind}_prediction_usd' for kind in KINDS]].sub(
+        frame['coin_in_usd'], axis=0
+    ).abs()
+    errors.columns = KINDS
+    return errors.mean().rename('mae_usd')
