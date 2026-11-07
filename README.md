@@ -6,7 +6,7 @@ Management wants to replace the lowest-earning machines. Our Streamlit dashboard
 
 ## Live dashboard
 
-TODO: public deployment link pending [deployment ticket](https://github.com/shaswat-singh23/datathon-dashboard/issues/24). Run locally using the instructions below.
+Public URL: PENDING. Deployment runbook, verification and the URL once live: [findings/24-deploy.md](findings/24-deploy.md). Until then, run locally using the instructions below.
 
 ## What we built
 
