@@ -26,7 +26,7 @@ Demand gap = local same-title peer coin-in/hour divided by other-zone same-title
 | M-1017 | 6 | 136.29 | 139.19 | 213.46 | −34.8% [−40.3%, −31.1%] | 97.9% | Yes |
 | M-1265 | 6 | 92.88 | 100.11 | 165.09 | −39.4% [−44.9%, −35.9%] | 92.8% | Yes |
 
-For the seven positive screens, matched local traffic gaps range from **−82.9% to −82.1%**. Every traffic interval's upper bound is below zero (individual bounds are returned by `assess`). These percentages compare sensor crossings in zones occupied by the same title, not unique visitors or machine-level demand conversion.
+For the seven positive screens, matched local traffic gaps range from **−82.8% to −82.1%**. Every traffic interval's upper bound is below zero (individual bounds are returned by `assess`). These percentages compare sensor crossings in zones occupied by the same title, not unique visitors or machine-level demand conversion.
 
 ## Walkway context and baseline
 
@@ -93,7 +93,7 @@ assert q.complete_months(d, '2025-03-08', '2025-03-08').empty
 assert pd.isna(r.loc['M-5076', 'demand_low'])
 assert r.loc['M-1118', 'matched_months'] == 0
 a = AppTest.from_file('pages/1_machines.py').run(timeout=30)
-assert not a.exception and a.metric[1].value == '7 / 10'
+assert not a.exception and next(m.value for m in a.metric if m.label == 'Manager picks with a location association') == '7 / 10'
 PY
 ```
 
