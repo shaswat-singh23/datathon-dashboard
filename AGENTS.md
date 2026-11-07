@@ -7,7 +7,7 @@ All work is a GitHub issue. Agents do the building; humans decide what gets buil
 ## Team
 - Shaswat, Sahith, Kyle, Alex. Everyone builds by pulling tickets.
 - **Decider:** Shaswat. Ranks the backlog, sets `must`, calls freezes, and is the only one who edits this file after kickoff.
-- **Story owner:** ___. Owns the README, slides, and video from hour 4. Still pulls tickets.
+- **Story:** everyone presents. Story work is `must` tickets with deadlines (created at kickoff). The decider makes sure they land on time.
 
 ## Challenge
 Filled in at kickoff. The decider updates the headline at each sync.
