@@ -2,6 +2,8 @@
 
 Management wants to replace the lowest-earning machines. Our Streamlit dashboard investigates whether weak earnings reflect machine performance, luck, location or downtime. **Provisional headline:** Back Forty coin-in per available machine-hour fell from **$135.5 before the walkway closure to $96.3 during it**, while the rest of the floor went from **$206.1 to $210.7** ([finding, comparison windows and queries](findings/16-demand-changes.md)). This descriptive result is awaiting independent review; it supports investigating access before blaming machines, rather than establishing a causal effect.
 
+[![Provisional demand comparison: Back Forty and the rest of the floor before, during and after the walkway closure; independent review pending.](figures/headline.png)](figures/README.md)
+
 ## Live dashboard
 
 TODO: public deployment link pending [deployment ticket](https://github.com/shaswat-singh23/datathon-dashboard/issues/24). Run locally using the instructions below.
