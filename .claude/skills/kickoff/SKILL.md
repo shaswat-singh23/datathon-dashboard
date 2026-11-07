@@ -19,6 +19,11 @@ Read the challenge's deliverables, judging criteria, data, and any starter code.
 8. **Backlog.** Create issues using the AGENTS.md ticket format:
    - A first wave of 4 to 8 `must` tickets with no dependencies on each other and non-overlapping Scope, so everyone can start at once.
    - Then the rest of the plan as `must` or `should` tickets, linked through Depends on.
-   - One story ticket for the README and demo, owned by the story owner.
+   - Story tickets, all `must`, each with its deadline in the Goal (use the real deadline from the rules):
+     - README draft with the current headline result, by hour 6.
+     - Demo script: the exact click path or commands for the live demo, by T-8h.
+     - Figures and screenshots collected into `figures/`, by T-6h.
+     - Presentation: an agent drafts slides and talking points from `findings/`, merged PRs, and the README, then splits sections by who built what (`gh pr list --state merged --json author,title`), by T-4h.
+     - Backup demo video recorded, in case the live demo fails (and for Devpost if the rules want one), by T-3h.
 
 Show the plan (stack, layout, ticket list with Scope) before creating anything. After approval: build, run the proof command, commit to master as `kickoff: <challenge>`, push, then create the issues and print the list.

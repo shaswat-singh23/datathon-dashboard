@@ -3,11 +3,10 @@
 Times assume a ~24h event. Rescale if it's shorter.
 
 ## How we work
-- **Ideas and the pitch: all of us.** We pick the challenge together, brainstorm together, and everyone can present.
+- **Ideas and the pitch: all of us.** We pick the challenge together, brainstorm together, and everyone presents the parts they built.
 - **Building: the backlog.** Every piece of work is a GitHub issue. People point their agents at tickets with `/work` (Claude Code) or "work on #N following AGENTS.md" (any other tool). New ideas go in with `/ticket` or the issue form.
-- **Two hats** (both people still pull tickets):
-  - **Decider:** ranks the backlog, promotes to `must`, says no, calls the freezes. Ties go to the decider so we don't spend time debating.
-  - **Story owner:** owns the README, slides, and video from hour 4, so the story isn't written at hour 22.
+- **Decider** (still pulls tickets): ranks the backlog, promotes to `must`, says no, calls the freezes, and makes sure the story tickets land on time. Ties go to the decider so we don't spend time debating.
+- **Story is tickets:** kickoff creates `must` story tickets with deadlines (README draft, demo script, figures, presentation, backup video). The presentation is drafted by an agent from `findings/` and merged PRs, so those need to stay accurate all along.
 - **Verification is everyone's job:** a ticket that produces a claimed number doesn't merge until someone else checks it.
 
 ## Timeline
@@ -22,7 +21,8 @@ Times assume a ~24h event. Rescale if it's shorter.
 | Overnight | Sleep in shifts, 2 people at a time, 3 to 4 hours each. Agents can keep running tickets. |
 | T-6h | Feature freeze. Only `bug` and story tickets from here. |
 | T-4h | Code freeze. Run `/ship-check`. |
-| T-3h | Record the video. Record it twice. |
+| T-4h to T-3h | Agent drafts the presentation. Split sections by who built what. Rehearse once with the live demo. |
+| T-3h | Record the backup demo video. |
 | T-1h | Submit. Devpost gets slow near the deadline. |
 
 ## Sync (10 minutes, every 3 hours)
