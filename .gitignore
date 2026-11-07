@@ -1,0 +1,30 @@
+# data: raw and processed stay local, shared via Drive
+/data/*
+!/data/README.md
+
+# personal scratch
+notebooks/
+.ipynb_checkpoints/
+
+# python
+.venv/
+__pycache__/
+*.pyc
+.ruff_cache/
+
+# model artifacts
+artifacts/
+catboost_info/
+
+# secrets
+.env
+.env.*
+.streamlit/secrets.toml
+
+# personal Claude Code settings
+.claude/settings.local.json
+CLAUDE.local.md
+
+# os / editor
+.DS_Store
+Thumbs.db
