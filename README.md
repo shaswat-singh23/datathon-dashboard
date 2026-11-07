@@ -44,7 +44,7 @@ Source: the organizer's [Dashboard Royale repository](https://github.com/tamu-da
 
 Money calculations use `royale/money.py`: aggregate ratios use sums, theoretical win uses configured game RTP, and luck is observed house win minus theoretical win. Machine comparisons exclude off-floor records, follow dated placements and use available hours. Contextual associations are descriptive; unusual payouts are inspection leads, not accusations.
 
-All linked findings currently await independent review. TODO: add the checked Claims & Evidence appendix and AI-use disclosure when their story ticket lands.
+All linked findings currently await independent review. The [Claims & Evidence appendix](docs/claims_evidence.md) lists every claim on the README or a page with its table or query, result, alternative explanation and limitation, and tracks each one's review status. The [AI-use disclosure](docs/ai_disclosure.md) states which tools the team used and for what.
 
 ## Setup and run
 
