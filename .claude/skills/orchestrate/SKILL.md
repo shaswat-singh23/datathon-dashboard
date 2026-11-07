@@ -44,6 +44,8 @@ Comment with `gh pr comment N -R <repo> --body "..."`, starting with **Orchestra
 - Create tickets for real gaps on the critical path (AGENTS.md format, `gh issue create -R <repo> --body-file <tmp> --label <priority>`). At most 5 new tickets per cycle across all repos.
 - Deadline alarms. At 2 hours before any submission deadline, put a `must` ticket at the top for "valid submission uploaded and confirmed." House Edge main closes Saturday 9 PM Central; check the other repos' AGENTS.md for theirs.
 - Suggest moving people between challenges when one is starved and another is near done. Recommend only; humans decide.
+- **Idle capacity.** For each repo, list unassigned `must` and `should` tickets whose dependencies are closed. Mark the ones that are S or M with checkable Done-when and Scopes that don't overlap. Recommend a `/fanout` batch of 3 to 5 of those by issue number for the Max-plan account, and an overflow repo for anyone whose home repo has no unblocked `must` ticket.
+- House Edge scores main 60 and round two 40 (per its AGENTS.md), so round two after 9 PM is not an afterthought. Make sure a round-two plan exists in its backlog before 9 PM.
 
 ## 5. Report
 Find the open issue labeled `status` in shaswat-singh23/datathon-dashboard. If none exists, create the label (`gh label create status -R <repo> --color 5319e7 --description "Orchestrator status"`) and an issue titled "HQ: orchestrator status" with that label and no priority label. Post one comment per cycle, under 40 lines:
@@ -58,6 +60,7 @@ Find the open issue labeled `status` in shaswat-singh23/datathon-dashboard. If n
 ### Actions I took
 ### Decisions needed (tag the decider by name)
 ### Suggested people moves
+### Fan-out batch for the Max-plan account (repo, issue numbers)
 ```
 Print the same report in this session.
 
