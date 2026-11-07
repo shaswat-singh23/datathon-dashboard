@@ -5,7 +5,7 @@ Read by Claude Code, Cursor, Codex, and Copilot. Using ChatGPT or Gemini in a br
 All work is a GitHub issue. Agents do the building; humans decide what gets built and check results.
 
 ## Team
-- Shaswat, ___, ___, ___. Everyone builds by pulling tickets.
+- Shaswat, Sahith, Kyle, Alex. Everyone builds by pulling tickets.
 - **Decider:** Shaswat. Ranks the backlog, sets `must`, calls freezes, and is the only one who edits this file after kickoff.
 - **Story owner:** ___. Owns the README, slides, and video from hour 4. Still pulls tickets.
 
