@@ -35,14 +35,35 @@ st.metric('Manager picks surviving adjustment', f'{overlap} / {len(raw)}')
 st.caption('Ranks and peer benchmarks recalculate within the selected period and bank. '
            'A machine with zero available hours has no adjusted rate and sorts last.')
 left, right = st.columns(2)
+ranking_columns = {
+    'machine_id': 'Machine', 'raw_rank': 'Manager rank', 'adjusted_rank': 'Adjusted rank',
+    'active_days': 'On-floor days', 'available_hours': st.column_config.NumberColumn('Available hours', format='%.1f'),
+    'zone': 'Zone(s)', 'game': 'Game(s)', 'triage': 'Investigation priority', 'rule': 'Screening rule',
+    'luck_z': st.column_config.NumberColumn('House-win luck z', format='%.2f'),
+    **{name: st.column_config.NumberColumn(label, format='$%.0f') for name, label in {
+        'coin_in': 'Total wagers ($)', 'house_win': 'Total house win ($)', 'theo': 'Expected house win ($)',
+        'luck_residual': 'House win minus theo ($)', 'supplied_cost': 'Supplied costs ($)',
+    }.items()},
+    **{name: st.column_config.NumberColumn(label, format='$%.2f') for name, label in {
+        'adjusted_per_hour': 'Expected contribution / available hour ($/h)',
+        'contribution_per_hour': 'Observed contribution / available hour ($/h)',
+        'zone_peer_per_hour': 'Zone peer contribution / available hour ($/h)',
+    }.items()},
+    **{name: st.column_config.NumberColumn(label, format='percent') for name, label in {
+        'availability': 'Availability', 'observed_hold': 'Observed hold', 'configured_hold': 'Configured hold',
+    }.items()},
+}
 with left:
     st.subheader('Manager: lowest total house win')
-    st.dataframe(raw[['house_win', 'adjusted_rank', 'triage', 'luck_z', 'rule']], width='stretch')
+    st.dataframe(raw[['house_win', 'adjusted_rank', 'triage', 'luck_z', 'rule']], width='stretch', column_config=ranking_columns)
 with right:
     st.subheader('Adjusted: lowest expected contribution/hour')
-    st.dataframe(adjusted[['adjusted_per_hour', 'raw_rank', 'zone', 'game']], width='stretch')
+    st.dataframe(adjusted[['adjusted_per_hour', 'raw_rank', 'zone', 'game']], width='stretch', column_config=ranking_columns)
 st.subheader('All machines — click a column to sort')
-st.dataframe(ranked, width='stretch')
+st.dataframe(ranked, width='stretch', column_config=ranking_columns)
+st.caption('Contribution = house win (observed) or theo (expected), minus supplied costs, divided by available hours. '
+           'Availability is available / scheduled gaming-day seconds. House-win luck z is the standardized '
+           'observed-minus-expected residual: negative means higher-than-expected payouts, not proof of a leak.')
 st.info('Classifications are inspection priorities, not causal findings. “Luck” also covers machines '
         'rescued by exposure adjustment. A location flag compares against other machines in the same zone; '
         'game mix and demand can confound it. A weak flag supports further investigation, not automatic replacement.')
