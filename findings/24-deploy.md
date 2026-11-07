@@ -25,7 +25,7 @@ The repo is **private** and owned by Shaswat. Community Cloud can deploy a priva
 6. Deploy. Dependencies install from `uv.lock` with uv (Community Cloud picks the first dependency file it finds, and `uv.lock` has priority). First build takes a few minutes.
 7. Open the URL in a private window. Click each sidebar page and change one period filter per page.
 8. Record the URL here and in README.md under "Live dashboard".
-9. Redeploy check: after the next merge to master, reload the URL. Community Cloud redeploys on every push to the deployed branch; the app menu (bottom right) shows the commit. Record the date here.
+9. Redeploy check: after the next merge to master, reload the URL. Community Cloud redeploys on every push to the deployed branch; the app menu (bottom right) shows the commit. Record the commit SHA and time here.
 
 ## Why these files
 
