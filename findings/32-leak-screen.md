@@ -83,7 +83,7 @@ from royale import io
 with patch.object(io, 'connect', side_effect=AssertionError('raw access')):
     app = AppTest.from_file(str(Path('pages/1_machines.py').resolve()), default_timeout=30).run()
     assert not app.exception
-    assert app.metric[-1].value == '1 / 310 tested'
+    assert next(m.value for m in app.metric if m.label == 'Payout inspection candidates') == '1 / 310 tested'
     app.slider[0].set_value((date(2025, 1, 1), date(2025, 1, 31))).run()
     assert not app.exception
     app.selectbox[0].select(app.selectbox[0].options[1]).run()
