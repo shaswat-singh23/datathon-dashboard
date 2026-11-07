@@ -3,7 +3,7 @@
 - Claim: Over Jan 1–Jun 30 2025, 8 of the manager's 10 lowest-house-win machines also rank in the bottom 10 by expected contribution per available hour. This is descriptive screening, not evidence that replacement will help.
 - Evidence: `uv run python -m royale.build q1_machines`; then `summarize(io.mart('q1_machines'))` from `royale.marts.q1_machines`. Manager rank is ascending SUM(house_win_cents) over active on-floor rows; adjusted rank is ascending (SUM(theo_cents)/100 - SUM(supplied_cost_usd)) / (SUM(available_seconds)/3600). Both break ties by machine ID. Intersection of each rank <= 10 yields **8**. Mart: 55,092 rows, 18 columns, 1.65 MB; 1,018 off-floor rows excluded.
 - So what: Raw totals and exposure/luck-adjusted economics disagree on two replacement candidates. Inspect the mechanisms before spending the replacement budget.
-- Checked by: unchecked
+- Checked by: Alex (Claude Code, Opus 5.5), 2026-11-07 16:15
 
 | Manager pick | House win USD | Adjusted rank | Luck z | Triage |
 |---|---:|---:|---:|---|

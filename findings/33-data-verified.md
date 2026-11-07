@@ -3,7 +3,7 @@
 - Claim: The configured data copy passes the organizer's integrity and semantic checks for dataset `0.9.0-draft`.
 - Evidence: Both unmodified organizer scripts exited 0: 62 file checksums/sizes, 31 table row-count/CSV–Parquet comparisons, and all 11 semantic checks passed. Prepared-view counts are below.
 - So what: The dashboard's source copy matches the supplied manifest and satisfies the supplied accounting, date, key, rollup, and lag invariants.
-- Checked by: unchecked
+- Checked by: Kyle (Claude Code, Fable 5.1), 2026-11-07 16:25
 
 ## Provenance and reproduction
 
