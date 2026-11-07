@@ -1,6 +1,6 @@
 # The Gilded Ace: investigate before replacing
 
-**Draft; not ready to submit.** Replace every HOLD slot after independent findings checks clear. The dashboard link awaits deployment. See [evidence status](https://github.com/shaswat-singh23/datathon-dashboard/blob/master/docs/claims_evidence.md).
+**Draft; not ready to submit.** Replace every HOLD slot after independent findings checks clear. See [evidence status](https://github.com/shaswat-singh23/datathon-dashboard/blob/master/docs/claims_evidence.md).
 
 Management wants to replace its lowest-earning casino machines. We ask whether weak earnings reflect the machines themselves, limited exposure, downtime, payout luck or location. Replacing a machine cannot fix an access problem.
 
@@ -14,4 +14,4 @@ The proposed July plan funds a payout/configuration inspection: **[HOLD: checked
 
 Verify configuration, then monitor availability and variance-standardized payout residuals against same-configuration controls and their June records through July. Any correction needs a separate effect estimate; regression to the mean is not an inspection benefit.
 
-[Dashboard — deployment pending](../findings/24-deploy.md#live-url) · [Code](https://github.com/shaswat-singh23/datathon-dashboard) · [Claims & Evidence](https://github.com/shaswat-singh23/datathon-dashboard/blob/master/docs/claims_evidence.md) · [AI-use disclosure](https://github.com/shaswat-singh23/datathon-dashboard/blob/master/docs/ai_disclosure.md)
+[Dashboard](https://datathon-dashboard-o5xb3rbuuqzppphcqeglmq.streamlit.app/) · [Code](https://github.com/shaswat-singh23/datathon-dashboard) · [Claims & Evidence](https://github.com/shaswat-singh23/datathon-dashboard/blob/master/docs/claims_evidence.md) · [AI-use disclosure](https://github.com/shaswat-singh23/datathon-dashboard/blob/master/docs/ai_disclosure.md)
