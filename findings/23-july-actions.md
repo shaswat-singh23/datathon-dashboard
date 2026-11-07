@@ -3,7 +3,7 @@
 - Claim: Fund one `A-INSPECT` for M-1158 at **$1,200** and preserve **$98,800** of the July 1–30 budget. This buys information, with no positive revenue recovery estimated. Monetary scenarios alone favor preserving the full budget. Neither manufacturer maintenance nor an extra grave technician covers its price under the historical recovery scenarios below.
 - Evidence: `uv run python -m royale.build q6_actions`, then `proposed_plan` and `assess` in `royale/marts/q6_actions.py`. `validate_plan` returns **[]**. One action type, quantity 1 (limit 15), one-day lead, two-hour inspection downtime; execute July 2. Mart: **56,314 rows**, **1,720,777 bytes** (under 5 MB).
 - So what: Investigate a specific payout/configuration question before committing to new titles. The historical ranking supplies no causal replacement-demand estimate; spending the full budget is not an objective.
-- Checked by: unchecked
+- Checked by: Kyle (Claude Code, Fable 5.1), 2026-11-07 16:25
 
 ## Evidence and baseline
 
