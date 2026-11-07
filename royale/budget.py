@@ -5,7 +5,7 @@ GUIDE.md formula for one action line:
 Rules: at most 3 action types (A-HOLD does not use a slot), quantity <= quantity_limit,
 no two actions in the same incompatibility_group on the same target, purchases count in full.
 
-Issue #2 implements these and tests them in tests/test_budget.py. Until then they raise.
+Issue #15 implements these and tests them in tests/test_budget.py. Until then they raise.
 """
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ import pandas as pd
 
 from royale import config
 
-_TODO = "Implemented by issue #2 (action pricing helper)."
+_TODO = "Implemented by issue #15 (action pricing helper)."
 
 
 @dataclass

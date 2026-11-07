@@ -41,8 +41,8 @@ Python 3.11+ managed by `uv`. Streamlit multipage app, DuckDB for queries over p
 royale/            Python package shared by every page
   config.py        DATA_DIR, table registry, window and budget constants
   io.py            io.table(name), io.sql(query) over DATA_DIR; io.mart(name) over marts/
-  money.py         money-math helpers (ticket #1). All pages use these.
-  budget.py        action pricing and plan validation (ticket #2)
+  money.py         money-math helpers (issue #14). All pages use these.
+  budget.py        action pricing and plan validation (issue #15)
   marts/           plugin folder: one module per mart, defines NAME and build(con)
   build.py         builds every mart into marts/
 app.py             Streamlit home page

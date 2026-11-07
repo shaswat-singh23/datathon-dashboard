@@ -8,13 +8,13 @@ Conventions (GUIDE.md and DATASET.md):
 - Exposure: compare per available hour or per unit of coin-in, not raw totals.
   Scheduled hours come from calendar_day.scheduled_seconds (2025-03-08 has 23 h).
 
-Issue #1 implements these and tests them in tests/test_money.py. Until then they raise.
+Issue #14 implements these and tests them in tests/test_money.py. Until then they raise.
 """
 from __future__ import annotations
 
 import pandas as pd
 
-_TODO = "Implemented by issue #1 (money-math helpers)."
+_TODO = "Implemented by issue #14 (money-math helpers)."
 
 
 def cents_to_usd(cents) -> float:
