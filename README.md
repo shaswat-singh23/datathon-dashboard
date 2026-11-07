@@ -1,6 +1,6 @@
 # The Gilded Ace: luck, location, or a leak?
 
-Management wants to replace the lowest-earning machines. Our Streamlit dashboard investigates whether weak earnings reflect machine performance, luck, location or downtime. **Provisional headline:** Back Forty coin-in per available machine-hour fell from **$135.5 before the walkway closure to $96.3 during it**, while the rest of the floor went from **$206.1 to $210.7** ([finding, comparison windows and queries](findings/16-demand-changes.md)). This descriptive result is awaiting independent review; it supports investigating access before blaming machines, rather than establishing a causal effect.
+Management wants to replace the lowest-earning machines. Our Streamlit dashboard compares the manager's picks with adjusted machine rankings, investigates luck, location and downtime, prices a July action plan and evaluates a demand forecast. **Provisional headline:** Back Forty coin-in per available machine-hour fell from **$135.5 before the walkway closure to $96.3 during it**, while the rest of the floor went from **$206.1 to $210.7** ([finding, comparison windows and queries](findings/16-demand-changes.md)). This descriptive result is awaiting independent review; it supports investigating access before blaming machines, rather than establishing a causal effect.
 
 [![Provisional demand comparison: Back Forty and the rest of the floor before, during and after the walkway closure; independent review pending.](figures/headline.png)](figures/README.md)
 
@@ -10,11 +10,11 @@ TODO: public deployment link pending [deployment ticket](https://github.com/shas
 
 ## What we built
 
-An interactive dashboard over a fictional casino's synthetic gaming, operations and guest records. Pages read committed derived parquet marts, so viewing the app does not require raw data. Demand, downtime, tracked-player outcomes and comps pages are available; machine rankings, the action plan and model validation are pending. Use each available page's period filter, drill controls and Source expander to trace the analysis.
+An interactive dashboard over a fictional casino's synthetic gaming, operations and guest records. Pages read committed derived parquet marts, so viewing the app does not require raw data. Machines, Demand, Downtime, Players, Comps, Actions and Model are implemented. Use each page's period filter, drill controls and source expander to trace the analysis. Implementation is complete for these pages; analytical findings remain provisional until independently checked.
 
 ### Machines: which underperform after adjustment?
 
-TODO: compare the manager's raw bottom-earner list with rankings adjusted for exposure, available hours and luck. Separate location explanations and inspection leads from evidence of weak machines. See [machine ranking ticket](https://github.com/shaswat-singh23/datathon-dashboard/issues/22).
+Open **Machines** to compare the manager's bottom ten by total house win with expected contribution per available hour, then change the period or drill into a bank. Explore the variance-adjusted payout screen and same-game location comparisons. Rankings are descriptive screens; they establish neither a replacement benefit nor wrongdoing. Provisional evidence awaiting independent review: [rankings and baseline](findings/22-machines.md), [location comparisons](findings/31-location.md) and [payout screen](findings/32-leak-screen.md).
 
 ### Demand: what changed across the floor?
 
@@ -34,11 +34,11 @@ Open **Comps** to compare economic cost with menu value, inspect redemption inte
 
 ### Actions: what should management fund?
 
-TODO: price a constrained plan with the shared budget helpers, link each action to evidence, and report uncertainty, sensitivity and a measurement plan. No spending recommendation is finalized. See [actions ticket](https://github.com/shaswat-singh23/datathon-dashboard/issues/23).
+Open **Actions** to inspect the proposed payout/configuration inspection and compare its price and downtime with preserving all funds, preventive maintenance and extra technician coverage. Change the evidence period, drill into an option and trace its measurement plan and source findings. Recovery scenarios are assumptions, and the monetary comparison favors preserving all funds; the inspection buys information without an estimated positive revenue recovery. The recommendation remains provisional pending independent review. [Plan, prices, baselines and limitations](findings/23-july-actions.md).
 
 ### Model and validation
 
-TODO: publish the time-based holdout evaluation against the training-period constant daily mean, reporting mean absolute error. Forecast inputs must have been known at prediction time; retrospectively published visitor and survey context cannot be forecast features.
+Open **Model** to compare a fitted weekday-plus-trend regression with constant and weekday-mean baselines. Training uses January–April; frozen forecasts are evaluated on May–June using mean absolute error. Change the evaluation period to recalculate selected-period scores and drill into errors by month or weekday. Inputs use calendar dates only. The weekday-mean baseline has the lowest observed holdout error; future superiority is unproven. [Evaluation, target reconciliation and limitations](findings/47-forecast-evaluation.md) remain provisional pending independent review.
 
 ## Data and analytical approach
 
