@@ -3,6 +3,8 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
+from royale.evidence import render_evidence
+
 from royale import io, money
 
 st.set_page_config(page_title="Comps: The Gilded Ace", page_icon="♠", layout="wide")
@@ -74,6 +76,7 @@ property_monthly["comp_reinvestment"] = property_monthly.apply(lambda r: money.c
 st.dataframe(property_monthly, hide_index=True, width="stretch")
 
 with st.expander("Source"):
+    render_evidence(['findings/19-comps.md'], key='5_comps')
     st.markdown("Mart: `q5_comps`; builder: `royale/marts/q5_comps.py`. Tracked monthly measures sum `player_period` by `period_month`, `opening_tier`, `home_region`; property totals sum `property_day` by gaming-date month. These are separate populations, combined with UNION ALL, with no raw-row join. Reconciliation joins one monthly aggregate per population (one-to-one). Points are available only for tracked guests. Filters select whole months because player_period has monthly grain.")
     st.code("SELECT period_month, opening_tier, home_region, SUM(comp_cost_usd), SUM(comp_face_value_usd), SUM(theo_usd), SUM(points_earned), SUM(points_redeemed) FROM player_period GROUP BY ALL")
     st.markdown("All reinvestment ratios use `royale.money.comp_reinvestment`: sum(cost) / sum(theo), undefined at zero theo. See `findings/19-comps.md` for the full-window evidence, baseline and limitations.")

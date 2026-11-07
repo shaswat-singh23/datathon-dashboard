@@ -7,6 +7,8 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
+from royale.evidence import render_evidence
+
 from royale import io
 
 st.set_page_config(page_title="Downtime: The Gilded Ace", page_icon="♠", layout="wide")
@@ -200,6 +202,7 @@ st.info(
 
 # ---- Source ----------------------------------------------------------------------------
 with st.expander("Source"):
+    render_evidence(['findings/17-downtime.md'], key='3_downtime')
     st.markdown(
         """
 **Mart:** `marts/q3_downtime.parquet`, built by `royale/marts/q3_downtime.py`

@@ -5,8 +5,11 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
+from royale.evidence import render_evidence
+
 from royale import io
 from royale.model import FITTED_KIND, KINDS, LABELS, score_forecasts
+from royale.overview import weekday_profile
 
 st.set_page_config(page_title='Coin-in forecast: The Gilded Ace', page_icon='♠', layout='wide')
 st.title('Can the calendar improve a daily demand forecast?')
@@ -54,7 +57,7 @@ if gap >= 0:
 else:
     st.info(f'The fitted weekday + trend regression beats the weekday-mean baseline by '
             f'${-gap:,.2f}/day on this holdout.')
-st.info('Decision: use the weekday profile as a starting point for staffing and promotion timing, '
+st.info('Decision: use the weekday profile as a starting point for staffing timing, '
         'and use the holdout MAE to describe typical observed error. Check whether weekday scheduling beats constant staffing in a future trial. '
         'Coin-in is a demand proxy; this forecast does not estimate staffing needs or promotion lift directly. '
         'The lowest error in this one holdout does not establish future superiority.')
@@ -84,7 +87,25 @@ with st.expander('Daily actuals and frozen predictions'):
     st.dataframe(view, hide_index=True)
 st.caption('Uncertainty: errors may be correlated over time, and events or demand shifts can break calendar patterns. '
            'MAE describes this holdout’s observed error; it is not a prediction interval or a guaranteed error bound.')
+st.subheader('A calendar profile for a staffing trial')
+profile = weekday_profile(data)
+st.dataframe(profile, column_config={
+    'weekday_prediction_usd': st.column_config.NumberColumn('Training weekday mean coin-in / day', format='dollar'),
+    'constant_prediction_usd': st.column_config.NumberColumn('Constant training mean / day', format='dollar'),
+    'vs_constant': st.column_config.NumberColumn('Demand above/below constant', format='percent'),
+})
+st.caption('Fixed January–April estimates recovered from the frozen forecast columns, Monday to Sunday. '
+           'The evaluation-period filter does not change this training profile. '
+           'Wagers do not translate directly into staff hours, so these are demand comparisons rather than headcounts.')
+st.markdown('**Prospective test:** keep total weekly staff hours fixed and compare weekday-profile allocation '
+            'with constant daily allocation in a randomized sequence of weeks. Before starting, choose the '
+            'minimum worthwhile reduction in fault waiting hours per 1,000 scheduled machine-hours and the '
+            'maximum acceptable change in availability. Report both arms, their difference and uncertainty. '
+            'Adopt the profile only if it clears that predeclared target without breaching the availability '
+            'guardrail. No staffing saving or revenue lift is assumed from this retrospective forecast.')
+
 with st.expander('Source and reproducibility'):
+    render_evidence(['findings/47-forecast-evaluation.md', 'findings/20-coin-in-forecast.md'], key='7_model')
     st.markdown('**Mart:** `marts/q7_forecast.parquet`, one row per held-out gaming date. '
                 '**Builder:** `royale/marts/q7_forecast.py`, selecting gaming_date and coin_in_usd from property_day without joins. '
                 '**Model:** `royale/model.py`; fit filters to Jan–Apr internally and predict consumes only dates. '

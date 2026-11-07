@@ -4,6 +4,8 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
+from royale.evidence import render_evidence
+
 from royale import io
 from royale.marts.q4_players import MONEY, QUERY, monthly_summary, outcomes
 
@@ -88,6 +90,7 @@ st.caption("Group totals cover the selected months. The ahead share here uses ac
            "so repeat visitors may contribute once in each month. It is descriptive; groups differ in exposure and play mix. "
            "These summaries are not a reason to encourage heavy losers to gamble more.")
 with st.expander("Source and calculation rules"):
+    render_evidence(['findings/18-player-outcomes.md'], key='4_players')
     st.markdown("**Mart:** `marts/q4_players.parquet`. **Builder:** `royale/marts/q4_players.py`. "
                 "The player_period prepared table has one row per account and gaming month. "
                 "The builder projects it without joins and asserts row counts, key uniqueness and both sign identities. "
