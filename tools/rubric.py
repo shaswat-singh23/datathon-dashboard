@@ -24,6 +24,7 @@ from urllib.request import urlopen
 ROOT = Path(__file__).resolve().parents[1]
 WEIGHTS = dict(zip((f"R{i}" for i in range(1, 18)),
                    (3, 3, 2, 2, 3, 3, 4, 3, 2, 2, 2, 3, 2, 2, 1, 2, 1)))
+WEIGHTS["R21"] = 2
 NESTED = "ROYALE_RUBRIC_NESTED"
 
 
@@ -344,6 +345,28 @@ def originality_check(root):
                {"candidates": candidates, "details": "Review whether the result is unexpected; marker plus reproduction heading alone is insufficient."})
 
 
+PLAY_MORE = re.compile(
+    r"(encourag\w*|incentiv\w*|nudg\w*|push\w*|entic\w*|induc\w*|get|persuad\w*|motivat\w*)\b[^.\n]{0,60}"
+    r"\b(heavy|high[- ]loss|biggest|top)\s+(losers?|losing\s+players?)\b[^.\n]{0,40}\b(play|wager|bet|gamble|spend|return|visit)",
+    re.I)
+NEGATION = re.compile(r"\b(not|never|no|n't|avoid\w*|without|refuse\w*|rule[sd]? out|must not|won't|don't)\b", re.I)
+
+
+def play_more_hits(text):
+    """Lines that urge heavy losers to play more, unless the same line negates it."""
+    return [line.strip() for line in text.splitlines()
+            if PLAY_MORE.search(line) and not NEGATION.search(line)]
+
+
+def responsible_play_check(root):
+    files = [p for pattern in ("README.md", "docs/*.md", "pages/*.py", "app.py", "royale/*.py")
+             for p in root.glob(pattern)]
+    hits = {str(p.relative_to(root)): found for p in files if (found := play_more_hits(p.read_text(errors="ignore")))}
+    return row("R21", "fail" if hits else "pass",
+               {"files_scanned": len(files), "hits": hits,
+                "limitation": "Single-line phrase scan with same-line negation; a human still reads the Actions page."})
+
+
 def run_checks(root=ROOT, *, run_tests=True, url=None):
     pages = page_checks(root)
     rows = [page_row("R1", pages, lambda p: ("pass" if p["seconds"] < 5 else "fail",
@@ -377,6 +400,7 @@ def run_checks(root=ROOT, *, run_tests=True, url=None):
     chart_details = [{"page": p["page"], **p.get("charts", {"problems": [p.get("error", "No chart inspection")]})} for p in pages]
     rows.append(row("R16", "fail" if any(p["problems"] for p in chart_details) else "manual", chart_details))
     rows.append(originality_check(root))
+    rows.append(responsible_play_check(root))
     return sorted(rows, key=lambda r: int(r["id"][1:]))
 
 
