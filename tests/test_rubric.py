@@ -176,3 +176,12 @@ def test_deployment_check_diagnoses_auth_redirect(tmp_path, monkeypatch):
     result = rubric.deployment_check(tmp_path, "https://x.streamlit.app/")
     assert result["status"] == "fail"
     assert "not public" in result["details"]["diagnosis"]
+
+
+def test_readme_links_check_requires_each_deliverable(tmp_path):
+    (tmp_path / "README.md").write_text("[w](docs/writeup.md) https://x.streamlit.app/")
+    result = rubric.readme_links_check(tmp_path)
+    assert result["status"] == "fail" and not result["details"]["linked"]["ai_disclosure"]
+    (tmp_path / "README.md").write_text("[w](docs/writeup.md) [c](docs/claims_evidence.md) "
+                                        "[a](docs/ai_disclosure.md) https://x.streamlit.app/")
+    assert rubric.readme_links_check(tmp_path)["status"] == "pass"
