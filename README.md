@@ -6,7 +6,7 @@ Management wants to replace the lowest-earning machines. Our Streamlit dashboard
 
 ## Live dashboard
 
-Public URL: PENDING. Deployment runbook, verification and the URL once live: [findings/24-deploy.md](findings/24-deploy.md). Until then, run locally using the instructions below.
+Public URL: **https://datathon-dashboard-o5xb3rbuuqzppphcqeglmq.streamlit.app/** (free tier: the first visit after idle takes about a minute to wake). Deployment notes and verification: [findings/24-deploy.md](findings/24-deploy.md). To run locally, see below.
 
 ## What we built
 
