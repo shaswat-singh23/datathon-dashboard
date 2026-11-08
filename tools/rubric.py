@@ -24,6 +24,7 @@ from urllib.request import urlopen
 ROOT = Path(__file__).resolve().parents[1]
 WEIGHTS = dict(zip((f"R{i}" for i in range(1, 18)),
                    (3, 3, 2, 2, 3, 3, 4, 3, 2, 2, 2, 3, 2, 2, 1, 2, 1)))
+WEIGHTS["R27"] = 1  # default view shows no empty-state warning
 NESTED = "ROYALE_RUBRIC_NESTED"
 
 
@@ -64,6 +65,15 @@ def shown_output(at):
     charts = [str(e.proto) for kind in ("plotly_chart", "arrow_vega_lite_chart") for e in at.get(kind)]
     tables = [frame.value.to_json(date_format="iso", double_precision=12) for frame in at.dataframe]
     return numeric_output(at), tables, charts
+
+
+EMPTY_STATE = re.compile(r"^\s*no\b|\bno [\w -]{0,40}(in|for) (this|that|the)\b|\bnot available\b|\bunavailable\b|"
+                         r"\bcould not\b|\bfailed\b|\bno data\b", re.I)
+
+
+def empty_state_warnings(at):
+    """Warnings a judge sees in the default view that announce an empty or failed section."""
+    return [str(w.value) for w in at.warning if EMPTY_STATE.search(str(w.value))]
 
 
 def rendered_text(at):
@@ -192,6 +202,7 @@ def inspect_page(page):
                              for e in sources]
         result["traces"] = [{"label": e.label, "pages": len(e.get("page_link")), "text": rendered_text(e)}
                             for e in at.expander if e.label.startswith("Trace:")]
+        result["empty_warnings"] = empty_state_warnings(at)
         result["chart_count"] = len(at.get("plotly_chart")) + len(at.get("arrow_vega_lite_chart"))
         if page == "pages/7_model.py":
             result["model"] = model_evidence(at)
@@ -349,7 +360,9 @@ def run_checks(root=ROOT, *, run_tests=True, url=None):
     rows = [page_row("R1", pages, lambda p: ("pass" if p["seconds"] < 5 else "fail",
                                            {"seconds": p["seconds"], "limit_seconds": 5})),
             *[page_row(check, pages, lambda p, c=check: (p[c]["status"], p[c]["details"])) for check in ("R2", "R3")],
-            page_row("R4", pages, source_status)]
+            page_row("R4", pages, source_status),
+            page_row("R27", pages, lambda p: ("fail" if p["empty_warnings"] else "pass",
+                                              p["empty_warnings"] or "No empty-state warning in default view"))]
     model = next((p for p in pages if p["page"] == "pages/7_model.py"), {})
     text = model.get("text", "")
     model_ok = (not model.get("error") and all(re.search(pattern, text, re.I | re.S) for pattern in

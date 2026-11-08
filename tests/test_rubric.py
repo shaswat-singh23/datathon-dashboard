@@ -165,3 +165,11 @@ def test_checker_cli_writes_complete_report_without_raw_data(tmp_path):
     # Every route must have actually been attempted, even if its app crashed.
     assert len(rows[0]["details"]) == 1 + len(list((ROOT / "pages").glob("*.py")))
     assert not any(p["details"] == "" for p in rows[0]["details"])
+
+
+def test_empty_state_warning_is_detected_but_caveats_are_not():
+    def view(*texts):
+        return SimpleNamespace(warning=[SimpleNamespace(value=t) for t in texts])
+    assert rubric.empty_state_warnings(view("No machine-days in that period.")) == ["No machine-days in that period."]
+    assert rubric.empty_state_warnings(view("Could not load the mart")) != []
+    assert rubric.empty_state_warnings(view("These ranks are descriptive screening priorities.")) == []
