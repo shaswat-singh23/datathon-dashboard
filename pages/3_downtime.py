@@ -14,7 +14,7 @@ from royale.theme import apply_theme
 from royale import io
 
 st.set_page_config(page_title="Downtime: The Gilded Ace", page_icon="♠", layout="wide")
-apply_theme("Availability & downtime")
+apply_theme("Availability & downtime", compact=True)
 
 BLUE = "#35665D"    # series 1
 ORANGE = "#A47734"  # series 2 (only where a second part is needed)

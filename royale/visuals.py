@@ -13,11 +13,13 @@ import pandas as pd
 import plotly.graph_objects as go
 
 from royale import budget, config, money
-from royale.theme import PALETTE
+from royale.theme import ADVERSE, BRASS, PALETTE, short_usd
 
-GREEN, BRASS, WINE, SLATE, UMBER = PALETTE[:5]
+# Data colors are distinct series; gold (BRASS) only marks emphasis; red (ADVERSE) only adverse outcomes.
+GREEN, BLUE, OCHRE, PLUM, UMBER = PALETTE[:5]
 INK = "#332D27"
-MUTED = "#B9AE9F"
+RULE = "#6A5F52"     # reference lines and boundaries
+MUTED = "#968A7A"    # de-emphasized series, >= 3:1 on the chart paper
 
 
 def usd(value: float) -> str:
@@ -53,16 +55,16 @@ def slope_chart(table: pd.DataFrame) -> go.Figure:
             x=SLOPE_X,
             y=[row.raw_rank, row.adjusted_rank], mode="lines+markers+text", name=machine,
             text=["", f"{machine} · #{int(row.adjusted_rank)}"], textposition="middle right",
-            line=dict(color=WINE if loud else MUTED, width=3.5 if loud else 1.5),
-            marker=dict(size=10 if loud else 7, color=WINE if loud else MUTED),
-            textfont=dict(color=WINE if loud else INK, size=13 if loud else 11),
+            line=dict(color=BRASS if loud else MUTED, width=3.5 if loud else 1.5),
+            marker=dict(size=10 if loud else 7, color=BRASS if loud else MUTED),
+            textfont=dict(color=BRASS if loud else INK, size=13 if loud else 11),
             hovertemplate=f"{machine}<br>%{{x}}: #%{{y}}<extra></extra>", showlegend=False,
         ))
     # A boundary trace, not a layout shape: shapes on log axes are easy to misplace.
     fig.add_trace(go.Scatter(x=SLOPE_X, y=[10.5, 10.5], mode="lines+text", name="Bottom-ten boundary",
-                             meta="boundary", line=dict(color=BRASS, dash="dash", width=1),
+                             meta="boundary", line=dict(color=RULE, dash="dash", width=1),
                              text=["Bottom ten above this line", ""], textposition="top right",
-                             textfont=dict(color=BRASS, size=11), hoverinfo="skip", showlegend=False))
+                             textfont=dict(color=RULE, size=11), hoverinfo="skip", showlegend=False))
     top = math.log10(0.8)
     fig.update_yaxes(type="log", range=[math.log10(max(table.adjusted_rank.max(), 10) * 1.4), top],
                      title="Rank among machines (1 = lowest)",
@@ -137,7 +139,7 @@ def closure_comparison(view: pd.DataFrame, window: tuple[pd.Timestamp, pd.Timest
 def closure_chart(table: pd.DataFrame) -> go.Figure:
     """Grouped bars: coin-in per available machine-hour, Back Forty vs rest of floor, by phase."""
     fig = go.Figure()
-    for area, color in (("Back Forty", GREEN), ("Rest of floor", BRASS)):
+    for area, color in (("Back Forty", GREEN), ("Rest of floor", BLUE)):
         part = table[table.area == area]
         fig.add_trace(go.Bar(
             x=part.phase, y=part.coin_in_per_available_hour, name=area, marker_color=color,
@@ -181,7 +183,7 @@ def cost_chart(costs: pd.DataFrame, budget_usd: float = config.BUDGET_USD) -> go
                              marker_color=colors[role], text=[f"${v:,.0f}" for v in part.cost_usd],
                              textposition="outside", cliponaxis=False,
                              hovertemplate="%{y}: $%{x:,.0f}<extra></extra>"))
-    fig.add_vline(x=budget_usd, line_dash="dash", line_color=WINE,
+    fig.add_vline(x=budget_usd, line_dash="dash", line_color=RULE,
                   annotation_text=f"${budget_usd:,.0f} budget", annotation_position="top")
     fig.update_yaxes(autorange="reversed", categoryorder="array", categoryarray=costs.option.tolist())
     fig.update_xaxes(title="Catalogue cost for July 1–30 ($)", tickformat="$,.0f",
@@ -212,15 +214,17 @@ def recovery_scenarios(options: pd.DataFrame, levels=RECOVERY_LEVELS) -> pd.Data
 
 def scenario_chart(scenarios: pd.DataFrame) -> go.Figure:
     fig = go.Figure()
-    for (action, part), color, where in zip(scenarios.groupby("option", sort=False), (SLATE, UMBER),
-                                            ("top center", "bottom center")):
+    # Both options start near the same 0% value; label them on opposite sides so they never collide.
+    for (action, part), color, dash, side in zip(scenarios.groupby("option", sort=False), (BLUE, PLUM),
+                                                 ("solid", "dash"), ("top", "bottom")):
+        where = [f"{side} right" if level == 0 else f"{side} center" for level in part.assumed_recovery]
         fig.add_trace(go.Scatter(
             x=part.assumed_recovery, y=part.theo_less_spend_usd, mode="lines+markers+text", name=action,
-            line=dict(color=color, width=2.5), text=[usd(v) for v in part.theo_less_spend_usd],
+            line=dict(color=color, width=2.5, dash=dash), text=[usd(v) for v in part.theo_less_spend_usd],
             textposition=where, hovertemplate=action + ", %{x:.0%} recovery: $%{y:,.0f}<extra></extra>"))
     fig.add_hline(y=0, line_dash="dash", line_color=GREEN,
                   annotation_text="Preserve funds: $0", annotation_position="bottom right")
-    fig.update_xaxes(title="Assumed recovery of historical downtime/waiting (scenario)", tickformat=".0%",
+    fig.update_xaxes(title="Assumed recovery of historical<br>downtime/waiting (scenario)", tickformat=".0%",
                      tickvals=list(RECOVERY_LEVELS))
     fig.update_yaxes(title="Incremental theo less spend ($)", tickformat="$,.0f")
     fig.update_layout(height=340, legend=dict(orientation="h", y=1.12, x=0), margin=dict(l=10, r=10, t=40, b=10))
@@ -280,39 +284,50 @@ def mae_chart(table: pd.DataFrame) -> go.Figure:
     best = table.mae_usd.idxmin()
     colors = [GREEN if i == best else MUTED for i in table.index]
     fig = go.Figure(go.Bar(y=table.model, x=table.mae_usd, orientation="h", marker_color=colors,
-                           text=[f"${v:,.0f}/day" for v in table.mae_usd], textposition="outside",
+                           text=[f"{short_usd(v)}/day" for v in table.mae_usd], textposition="outside",
                            cliponaxis=False, hovertemplate="%{y}: $%{x:,.0f} MAE per day<extra></extra>"))
     fig.update_yaxes(autorange="reversed")
-    fig.update_xaxes(title="Mean absolute error, May 1–June 30 holdout (USD/day; lower is better)",
-                     tickformat="$,.0f", range=[0, table.mae_usd.max() * 1.25])
+    fig.update_xaxes(title="Holdout MAE, May 1–June 30<br>(USD/day; lower is better)",
+                     tickformat="$,.0f", range=[0, table.mae_usd.max() * 1.4])
     fig.update_layout(height=260, margin=dict(l=10, r=30, t=20, b=10), showlegend=False)
     return fig
 
 
 def forecast_chart(view: pd.DataFrame, kinds, labels: dict) -> go.Figure:
     """Actual coin-in against frozen predictions already stored in the mart."""
-    colors = dict(zip(("constant", "weekday", "weekday_trend"), (MUTED, GREEN, BRASS)))
+    colors = dict(zip(("constant", "weekday", "weekday_trend"), (MUTED, GREEN, PLUM)))
     fig = go.Figure(go.Scatter(x=view.gaming_date, y=view.coin_in_usd, name="Actual coin-in",
                                line=dict(color=INK, width=2)))
     for kind in kinds:
         fig.add_trace(go.Scatter(x=view.gaming_date, y=view[f"{kind}_prediction_usd"], name=labels[kind],
-                                 line=dict(color=colors.get(kind, SLATE), dash="solid" if kind == "weekday" else "dot")))
+                                 line=dict(color=colors.get(kind, BLUE), dash="solid" if kind == "weekday" else "dot")))
     fig.update_layout(height=380, yaxis_title="Daily coin-in (USD)", hovermode="x unified",
                       yaxis_tickformat="$,.0f", legend=dict(orientation="h", y=1.12, x=0))
     return fig
 
 
 def planning_chart(planning: pd.DataFrame) -> go.Figure:
-    """Gain in demand share vs uniform allocation, with the week-bootstrap interval."""
+    """Gain in demand share vs uniform allocation, with the week-bootstrap interval.
+
+    Each value is printed in its row label rather than at the bar end, so labels never
+    overlap the error bars at any width; negative gains use the adverse color.
+    """
+    gain, low, high = planning.gain_pp, planning.gain_low_pp, planning.gain_high_pp
     fig = go.Figure(go.Bar(
-        y=planning.model, x=planning.gain_pp, orientation="h",
-        marker_color=[GREEN if v > 0 else WINE for v in planning.gain_pp],
-        error_x=dict(type="data", symmetric=False, array=planning.gain_high_pp - planning.gain_pp,
-                     arrayminus=planning.gain_pp - planning.gain_low_pp, color=INK),
-        text=[f"{v:+.1f} pp" for v in planning.gain_pp], textposition="outside", cliponaxis=False,
+        y=planning.model, x=gain, orientation="h", name="Gain vs uniform",
+        marker_color=[GREEN if v > 0 else ADVERSE for v in gain],
+        error_x=dict(type="data", symmetric=False, array=high - gain, arrayminus=gain - low,
+                     color=INK, thickness=1.5, width=6),
         hovertemplate="%{y}: %{x:+.2f} percentage points<extra></extra>"))
     fig.add_vline(x=0, line_color=INK)
-    fig.update_yaxes(autorange="reversed")
-    fig.update_xaxes(title="Demand share on review days minus uniform allocation (percentage points)")
-    fig.update_layout(height=240, margin=dict(l=10, r=30, t=20, b=10), showlegend=False)
+    fig.update_yaxes(autorange="reversed", tickvals=list(planning.model),
+                     ticktext=[f"{m}  <b>{v:+.1f} pp</b>" for m, v in zip(planning.model, gain)])
+    # A left-aligned chart title instead of an axis title: it stays readable when long row labels
+    # leave only a narrow plot area on phones.
+    fig.update_xaxes(title=None, zeroline=False, ticksuffix=" pp")
+    fig.update_layout(height=280, margin=dict(l=10, r=20, t=56, b=10), showlegend=False,
+                      title=dict(text="Review-day demand share vs uniform allocation<br>"
+                                      "(percentage points; whiskers: week bootstrap)",
+                                 x=0.02, xanchor="left", xref="container",
+                                 font=dict(family="Georgia, serif", color=INK, size=14, weight="normal")))
     return fig

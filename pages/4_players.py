@@ -12,7 +12,7 @@ from royale import io
 from royale.marts.q4_players import MONEY, QUERY, monthly_summary, outcomes
 
 st.set_page_config(page_title="Tracked players: The Gilded Ace", page_icon="♠", layout="wide")
-apply_theme("Player outcomes")
+apply_theme("Player outcomes", compact=True)
 st.title("What did tracked players wager, get back and net?")
 st.caption("Fictional casino, synthetic data. Carded play only: uncarded wagers and outcomes are invisible. "
            "Coin-in includes replayed winnings; it is not cash brought to the casino.")

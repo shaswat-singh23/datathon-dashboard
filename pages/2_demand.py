@@ -14,7 +14,7 @@ from royale import io, visuals
 from royale.demand import event_comparison, traffic_summary
 
 st.set_page_config(page_title="Demand: The Gilded Ace", page_icon="♠", layout="wide")
-apply_theme("Floor demand")
+apply_theme("Floor demand", compact=True)
 
 BLUE = "#35665D"      # series 1: the selected zone / the floor
 ORANGE = "#A47734"    # series 2: comparison (rest of floor)

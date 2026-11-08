@@ -14,7 +14,7 @@ from royale.overview import weekday_profile
 from royale.planning import evaluate_planning
 
 st.set_page_config(page_title='Coin-in forecast: The Gilded Ace', page_icon='♠', layout='wide')
-apply_theme("Forecast & validation")
+apply_theme("Forecast & validation", compact=True)
 st.title('Can the calendar improve a daily demand forecast?')
 st.caption('Daily whole-floor coin-in in a fictional casino. Coin-in includes replayed winnings; it is not revenue or visitor spending.')
 try:
@@ -135,12 +135,12 @@ else:
                'Boundary weeks and weeks missing a date are excluded for all policies. '
                'One, two and three slots are sensitivity scenarios, not choices optimized on this holdout.')
     st.dataframe(planning[['model', 'weeks', 'review_days', 'demand_share', 'uniform_share',
-                          'gain_pp', 'gain_low_pp', 'gain_high_pp']], hide_index=True,
+                          'gain_pp', 'gain_low_pp', 'gain_high_pp']], hide_index=True, width='stretch',
                  column_config={
-                     'model': 'Frozen forecast policy', 'weeks': 'Complete weeks', 'review_days': 'Review-day slots',
-                     'demand_share': st.column_config.NumberColumn('Observed demand on review days', format='percent'),
-                     'uniform_share': st.column_config.NumberColumn('Uniform allocation: expected share', format='percent'),
-                     'gain_pp': st.column_config.NumberColumn('Gain vs uniform (percentage points)', format='%.2f'),
+                     'model': 'Frozen forecast policy', 'weeks': 'Weeks', 'review_days': 'Slots',
+                     'demand_share': st.column_config.NumberColumn('Review-day demand share', format='percent'),
+                     'uniform_share': st.column_config.NumberColumn('Uniform expected share', format='percent'),
+                     'gain_pp': st.column_config.NumberColumn('Gain vs uniform (pp)', format='%.2f', help='Percentage points'),
                      'gain_low_pp': st.column_config.NumberColumn('Gain 95% low (pp)', format='%.2f'),
                      'gain_high_pp': st.column_config.NumberColumn('Gain 95% high (pp)', format='%.2f'),
                  })

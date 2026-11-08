@@ -6,6 +6,7 @@ from streamlit.testing.v1 import AppTest
 
 from royale import config, io
 from royale.evidence import documents, local_references_as_text, read_document
+from royale.theme import exact_usd, short_usd
 from royale.overview import period_totals, rank_stability, select_machine_days, weekday_profile
 
 
@@ -35,6 +36,16 @@ def assert_clean(at):
 
 def metric(at, label):
     return next(m.value for m in at.metric if m.label == label)
+
+
+def metric_help(at, label):
+    return next(m.help for m in at.metric if m.label == label)
+
+
+def assert_money_metric(at, label, exact):
+    """Card shows the shortened display; the exact dollar value stays in its help text."""
+    assert metric(at, label) == short_usd(exact)
+    assert exact_usd(exact) in metric_help(at, label)
 
 
 def selectbox(at, label):
@@ -89,7 +100,7 @@ def test_home_changes_dollars_and_rank_scope_with_bank_and_period(no_raw_data):
     source = io.mart("q1_machines")
     dates = pd.to_datetime(source.gaming_date)
     expected = source.loc[(source.bank_id == "B-01") & (dates.dt.month == 6)]
-    assert metric(at, "Coin-in") == f"${expected.coin_in_cents.sum() / 100:,.0f}"
+    assert_money_metric(at, "Coin-in", expected.coin_in_cents.sum() / 100)
     displayed = at.dataframe[0].value
     assert set(displayed.index) <= set(expected.machine_id)
     assert displayed.active_days.max() <= 30
@@ -113,7 +124,7 @@ def test_dst_day_uses_23_hours_and_reconciles_property_totals(no_raw_data):
     at = open_page()
     at.slider[0].set_value((day, day)).run()
     assert_clean(at)
-    assert metric(at, "Coin-in") == f"${expected.coin_in_usd:,.0f}"
+    assert_money_metric(at, "Coin-in", expected.coin_in_usd)
 
 
 def test_home_zero_exposure_does_not_invent_adjusted_ranks(no_raw_data, monkeypatch):

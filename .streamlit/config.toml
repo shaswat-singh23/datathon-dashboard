@@ -1,11 +1,12 @@
 [theme]
 base = "light"
-primaryColor = "#8D682D"
+primaryColor = "#7F5D27"
 backgroundColor = "#F7F3EB"
 secondaryBackgroundColor = "#EEE7DC"
 textColor = "#332D27"
 borderColor = "#DED2C0"
-chartCategoricalColors = ["#35665D", "#A47734", "#844C57", "#697A91", "#66584C", "#9B6747"]
+headingFont = "serif"
+chartCategoricalColors = ["#2E6B5E", "#3F6497", "#8A5A1C", "#6A4C8C", "#6B5A4A", "#23798A"]
 
 [theme.sidebar]
 primaryColor = "#D3B67D"

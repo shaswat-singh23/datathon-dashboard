@@ -13,7 +13,7 @@ REPO = "https://github.com/shaswat-singh23/datathon-dashboard/blob/master/"
 FINDING = REPO + "findings/23-july-actions.md"
 
 st.set_page_config(page_title="Actions: The Gilded Ace", page_icon="♠", layout="wide")
-apply_theme("July investment plan")
+apply_theme("July investment plan", compact=True)
 st.title("Inspect before replacing; preserve the remaining budget")
 st.caption("July 1–30, 2025 · A small information purchase, with maintenance and staffing alternatives priced alongside it.")
 try:
@@ -205,7 +205,9 @@ It books no positive uplift. Maintenance covers the latest on-floor footprint of
 manufacturer with the highest historical downtime share. Staffing covers grave-shift
 waiting only. No later-published context is used. No incremental comp cost is proposed.
 The scenarios assume historical demand persists, ignore property substitution and
-do not establish treatment effects. Source findings await independent review.
+do not establish treatment effects. Each source finding names its reviewer on its
+Checked-by line, shown above; those checks were AI-assisted team reviews, not an
+external audit.
 """)
     st.dataframe(data.loc[data.record_type == "audit", ["audit_table", "rows_before", "rows_after", "excluded_off_floor"]],
                  hide_index=True, width="stretch")
