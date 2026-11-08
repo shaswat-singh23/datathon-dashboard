@@ -176,3 +176,16 @@ def test_deployment_check_diagnoses_auth_redirect(tmp_path, monkeypatch):
     result = rubric.deployment_check(tmp_path, "https://x.streamlit.app/")
     assert result["status"] == "fail"
     assert "not public" in result["details"]["diagnosis"]
+
+
+def test_cited_findings_must_be_checked(tmp_path):
+    (tmp_path / "findings").mkdir()
+    (tmp_path / "pages").mkdir()
+    (tmp_path / "findings/1-a.md").write_text("- Checked by: Kyle, 2026-11-07\n")
+    (tmp_path / "findings/2-b.md").write_text("- Checked by: unchecked\n")
+    (tmp_path / "app.py").write_text("st.caption('findings/1-a.md')")
+    assert rubric.cited_findings_check(tmp_path)["status"] == "pass"
+    (tmp_path / "pages/p.py").write_text("x = 'findings/2-b.md findings/3-c.md'")
+    result = rubric.cited_findings_check(tmp_path)
+    assert result["status"] == "fail"
+    assert [p["problem"] for p in result["details"]["problems"]] == ["unchecked", "missing"]
