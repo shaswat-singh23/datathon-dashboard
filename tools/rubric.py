@@ -22,8 +22,8 @@ from urllib.error import URLError
 from urllib.request import HTTPRedirectHandler, build_opener, urlopen
 
 ROOT = Path(__file__).resolve().parents[1]
-WEIGHTS = dict(zip((f"R{i}" for i in range(1, 18)),
-                   (3, 3, 2, 2, 3, 3, 4, 3, 2, 2, 2, 3, 2, 2, 1, 2, 1)))
+WEIGHTS = {**dict(zip((f"R{i}" for i in range(1, 18)),
+                      (3, 3, 2, 2, 3, 3, 4, 3, 2, 2, 2, 3, 2, 2, 1, 2, 1))), "R42": 1}
 NESTED = "ROYALE_RUBRIC_NESTED"
 
 
@@ -367,6 +367,16 @@ def originality_check(root):
                {"candidates": candidates, "details": "Review whether the result is unexpected; marker plus reproduction heading alone is insufficient."})
 
 
+def lock_check(root):
+    """R42: uv.lock must match pyproject.toml so the deployed environment is reproducible."""
+    try:
+        result = subprocess.run(["uv", "lock", "--check"], cwd=root, capture_output=True, text=True, timeout=120)
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        return row("R42", "fail", f"uv lock --check could not run: {exc}")
+    return row("R42", "pass" if result.returncode == 0 else "fail",
+               {"returncode": result.returncode, "output": (result.stderr or result.stdout)[-300:]})
+
+
 def run_checks(root=ROOT, *, run_tests=True, url=None):
     pages = page_checks(root)
     rows = [page_row("R1", pages, lambda p: ("pass" if p["seconds"] < 5 else "fail",
@@ -400,6 +410,7 @@ def run_checks(root=ROOT, *, run_tests=True, url=None):
     chart_details = [{"page": p["page"], **p.get("charts", {"problems": [p.get("error", "No chart inspection")]})} for p in pages]
     rows.append(row("R16", "fail" if any(p["problems"] for p in chart_details) else "manual", chart_details))
     rows.append(originality_check(root))
+    rows.append(lock_check(root))
     return sorted(rows, key=lambda r: int(r["id"][1:]))
 
 

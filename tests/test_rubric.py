@@ -176,3 +176,13 @@ def test_deployment_check_diagnoses_auth_redirect(tmp_path, monkeypatch):
     result = rubric.deployment_check(tmp_path, "https://x.streamlit.app/")
     assert result["status"] == "fail"
     assert "not public" in result["details"]["diagnosis"]
+
+
+def test_lock_check_fails_when_lock_is_stale(tmp_path):
+    (tmp_path / "pyproject.toml").write_text('[project]\nname = "x"\nversion = "0"\nrequires-python = ">=3.11"\ndependencies = []\n')
+    assert rubric.lock_check(tmp_path)["status"] == "fail"  # no uv.lock yet
+    subprocess.run(["uv", "lock"], cwd=tmp_path, check=True, capture_output=True)
+    assert rubric.lock_check(tmp_path)["status"] == "pass"
+    (tmp_path / "pyproject.toml").write_text(
+        '[project]\nname = "x"\nversion = "0"\nrequires-python = ">=3.11"\ndependencies = ["six"]\n')
+    assert rubric.lock_check(tmp_path)["status"] == "fail"
