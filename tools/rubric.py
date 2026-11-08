@@ -19,7 +19,7 @@ import tempfile
 import time
 from unittest.mock import patch
 from urllib.error import URLError
-from urllib.request import urlopen
+from urllib.request import HTTPRedirectHandler, build_opener, urlopen
 
 ROOT = Path(__file__).resolve().parents[1]
 WEIGHTS = dict(zip((f"R{i}" for i in range(1, 18)),
@@ -295,7 +295,30 @@ def deployment_check(root, url=None):
         return row("R14", "manual", {"url": url, "http_status": code,
                    "details": "Streamlit HTML shell responds; browser review must confirm the dashboard home loads (not a login/error page)."})
     except (OSError, URLError, ValueError) as exc:
-        return row("R14", "fail", {"url": url, "error": str(exc)})
+        details = {"url": url, "error": str(exc)}
+        location = _first_redirect(url)
+        if location and ("/auth" in location or "/-/login" in location or "share.streamlit.io" in location):
+            details["diagnosis"] = ("App redirects to a Streamlit sign-in page, so it is not public. "
+                                    "A human must set Settings > Sharing > 'This app is public' (issue #24).")
+            details["redirect_to"] = location.split("?")[0]
+        return row("R14", "fail", details)
+
+
+class _NoRedirect(HTTPRedirectHandler):
+    def redirect_request(self, *args, **kwargs):
+        return None
+
+
+def _first_redirect(url):
+    """Return the Location header of the first response, or None."""
+    try:
+        build_opener(_NoRedirect).open(url, timeout=15)
+    except URLError as exc:
+        headers = getattr(exc, "headers", None)
+        return headers.get("Location") if headers is not None else None
+    except OSError:
+        return None
+    return None
 
 
 def mart_and_tests_check(root, run_tests):
