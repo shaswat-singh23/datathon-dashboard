@@ -6,6 +6,7 @@ import streamlit as st
 from royale.evidence import render_evidence
 from royale.theme import apply_theme
 from royale import io
+from royale.filters import analysis_period, bank_drill, describe_period, reset_button
 from royale.marts import q1_location as location
 from royale.marts.q1_machines import summarize
 
@@ -19,13 +20,17 @@ except FileNotFoundError as exc:
     st.error(str(exc))
     st.stop()
 data['gaming_date'] = pd.to_datetime(data.gaming_date)
-start, end = st.slider('Analysis period', min_value=data.gaming_date.min().date(),
-    max_value=data.gaming_date.max().date(),
-    value=(data.gaming_date.min().date(), data.gaming_date.max().date()))
-bank = st.selectbox('Bank drill', ['All banks'] + sorted(data.bank_id.dropna().unique().tolist()))
+start, end = analysis_period('machines', data.gaming_date.min().date(), data.gaming_date.max().date())
+f1, f2 = st.columns([3, 1])
+with f1:
+    bank = bank_drill('machines', data.bank_id.dropna().unique().tolist())
+with f2:
+    reset_button('machines')
 selected = data[data.gaming_date.dt.date.between(start, end)]
 if bank != 'All banks':
     selected = selected[selected.bank_id == bank]
+st.caption(f'Scope: {bank}, {describe_period(start, end)}; {selected.machine_id.nunique()} machines, '
+           f'{len(selected):,} on-floor machine-days. Period and bank are shared with Home.')
 if selected.empty:
     st.warning('No on-floor machine-days in this selection.')
     st.stop()

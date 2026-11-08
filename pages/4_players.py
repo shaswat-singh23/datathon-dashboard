@@ -5,6 +5,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from royale.evidence import render_evidence
+from royale.filters import independent_scope_note
 from royale.theme import apply_theme
 
 from royale import io
@@ -21,7 +22,9 @@ except FileNotFoundError as err:
     st.error(str(err))
     st.stop()
 months = sorted(df.period_month.unique())
+st.caption(independent_scope_note("Monthly guest scope: carded play by whole gaming month"))
 start, end = st.select_slider("Analysis period (gaming months)", options=months, value=(months[0], months[-1]))
+st.caption(f"Monthly guest scope: {start} to {end}, whole months.")
 view = df[df.period_month.between(start, end)]
 cols = st.columns(3)
 for col, field, label in zip(cols, ["home_region", "age_band", "opening_tier"],

@@ -3,6 +3,7 @@ import pandas as pd
 import streamlit as st
 
 from royale.evidence import render_evidence
+from royale.filters import analysis_period, describe_period
 from royale.theme import apply_theme
 
 from royale import budget, config, io
@@ -31,9 +32,11 @@ left.metric("Plan cost", f"${total:,.0f}")
 middle.metric("Budget preserved", f"${config.BUDGET_USD-total:,.0f}")
 right.metric("Funded action types", f"{len({line.action_type_id for line in plan})} / 3")
 if violations:
-    st.error("validate_plan: " + "; ".join(violations))
+    st.error("The July plan breaks a budget or catalogue limit: " + "; ".join(violations))
     st.stop()
-st.success("validate_plan: no violations (budget, quantity limits and incompatibilities checked).")
+st.success("Within budget and catalogue limits.")
+st.caption("Historical evidence scope; July plan fixed. The plan above uses the complete January–June record; "
+           "the evidence period further down changes only the supporting rates and alternative scenarios.")
 
 full_options, full_evidence = assess(data)
 for line in plan:
@@ -70,8 +73,8 @@ with st.expander("Manager's ten-machine replacement baseline"):
              "Neither option has a measured replacement-demand effect in these records.")
 
 dates = pd.to_datetime(md.gaming_date)
-start, end = st.slider("Evidence period", min_value=dates.min().date(), max_value=dates.max().date(),
-                       value=(dates.min().date(), dates.max().date()))
+start, end = analysis_period("actions", dates.min().date(), dates.max().date(), label="Evidence period")
+st.caption(f"Historical evidence scope: {describe_period(start, end)}, whole floor; July plan fixed.")
 options, evidence = assess(data, start, end)
 st.caption("This filter recalculates supporting rates and alternative scenarios. The July plan, its targets, "
            "and its prices remain based on the complete January–June record. Short windows are noisy.")

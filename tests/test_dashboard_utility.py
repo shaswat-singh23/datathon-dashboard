@@ -78,6 +78,9 @@ def test_home_changes_dollars_and_rank_scope_with_bank_and_period(no_raw_data):
     assert metric(at, "Manager picks surviving adjustment") == "8 / 10"
     assert "M-1158" in at.info[0].value and "$1,200" in at.info[0].value and "$98,800" in at.info[0].value
     fixed_plan = at.info[0].value
+    fixed_cards = [metric(at, "Inspection budget"), metric(at, "Budget retained")]
+    assert fixed_cards == ["$1,200", "$98,800"]
+    full_coin_in = metric(at, "Coin-in")
     # Registered direct links take judges to the three key investigations.
     assert len(at.get("page_link")) >= 3
     at.slider[0].set_value((date(2025, 6, 1), date(2025, 6, 30))).run()
@@ -91,6 +94,9 @@ def test_home_changes_dollars_and_rank_scope_with_bank_and_period(no_raw_data):
     assert set(displayed.index) <= set(expected.machine_id)
     assert displayed.active_days.max() <= 30
     assert at.info[0].value == fixed_plan
+    # Historical metrics move with the filters; the fixed July plan does not.
+    assert metric(at, "Coin-in") != full_coin_in
+    assert [metric(at, "Inspection budget"), metric(at, "Budget retained")] == fixed_cards
 
 
 def test_dst_day_uses_23_hours_and_reconciles_property_totals(no_raw_data):

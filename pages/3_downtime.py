@@ -8,6 +8,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from royale.evidence import render_evidence
+from royale.filters import analysis_period, describe_period
 from royale.theme import apply_theme
 
 from royale import io
@@ -71,7 +72,8 @@ df["month"] = pd.to_datetime(df["month"]).dt.strftime("%Y-%m")
 # ---- Filters: period + zone drill ------------------------------------------------------
 dmin, dmax = df["gaming_date"].min().date(), df["gaming_date"].max().date()
 c1, c2 = st.columns([3, 1])
-start, end = c1.slider("Analysis period", min_value=dmin, max_value=dmax, value=(dmin, dmax), format="MMM D")
+with c1:
+    start, end = analysis_period("downtime", dmin, dmax)
 zones = (df[df["zone_id"].notna()][["zone_id", "zone_name"]].drop_duplicates().sort_values("zone_name"))
 zone_label = dict(zip(zones["zone_id"], zones["zone_name"]))
 zone = c2.selectbox("Zone drill", ["All zones"] + list(zones["zone_id"]),
@@ -82,10 +84,12 @@ view = df[in_period] if zone == "All zones" else df[in_period & (df["zone_id"] =
 md = view[view["record_type"] == "machine_day"]
 tk = view[view["record_type"] == "ticket"]
 faults = tk[tk["event_type"] == "fault_repair"]
+scope_name = "the whole floor" if zone == "All zones" else zone_label[zone]
+st.caption(f"Scope: {scope_name}, {describe_period(start, end)}. The daily period is shared with "
+           "Home, Machines, Demand, Downtime and the Actions evidence; the zone drill is this page's own.")
 if md.empty:
     st.warning("No machine-days in that period.")
     st.stop()
-scope_name = "the whole floor" if zone == "All zones" else zone_label[zone]
 
 # ---- KPIs ------------------------------------------------------------------------------
 lost_h = md["lost_h"].sum()

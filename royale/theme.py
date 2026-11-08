@@ -8,16 +8,18 @@ import plotly.io as pio
 import streamlit as st
 
 PALETTE = ["#35665D", "#A47734", "#844C57", "#697A91", "#66584C", "#9B6747"]
-ROUTES = [
-    ("app.py", "Overview"),
-    ("pages/1_machines.py", "Machine performance"),
-    ("pages/2_demand.py", "Floor demand"),
-    ("pages/3_downtime.py", "Availability & downtime"),
-    ("pages/4_players.py", "Player outcomes"),
-    ("pages/5_comps.py", "Loyalty & comps"),
-    ("pages/6_actions.py", "July investment plan"),
-    ("pages/7_model.py", "Forecast & validation"),
+# Story groups over the unchanged route paths.
+NAV_GROUPS = [
+    ("OVERVIEW", [("app.py", "Overview")]),
+    ("INVESTIGATE", [("pages/1_machines.py", "Machine performance"),
+                     ("pages/2_demand.py", "Floor demand"),
+                     ("pages/3_downtime.py", "Availability & downtime")]),
+    ("GUESTS & LOYALTY", [("pages/4_players.py", "Player outcomes"),
+                          ("pages/5_comps.py", "Loyalty & comps")]),
+    ("DECIDE & VALIDATE", [("pages/6_actions.py", "July investment plan"),
+                           ("pages/7_model.py", "Forecast & validation")]),
 ]
+ROUTES = [route for _, routes in NAV_GROUPS for route in routes]
 
 
 def apply_theme(section: str) -> None:
@@ -39,9 +41,10 @@ def apply_theme(section: str) -> None:
                 '<div class="ga-brand-name">The Gilded Ace</div>'
                 '<div class="ga-smallcaps">LAS VEGAS · PROPERTY INTELLIGENCE</div>'
                 '<div class="ga-suits" aria-hidden="true">♠ <span>♦</span> ♣ <span>♥</span></div></div>')
-        st.html('<div class="ga-nav-label">THE PROPERTY REPORT</div>')
-        for route, label in ROUTES:
-            st.page_link(route, label=label)
+        for group, routes in NAV_GROUPS:
+            st.html(f'<div class="ga-nav-label">{escape(group)}</div>')
+            for route, label in routes:
+                st.page_link(route, label=label)
         st.html('<div class="ga-sidebar-note"><span class="ga-smallcaps">THE OBSERVATION WINDOW</span>'
                 '<p>January — June 2025</p><hr>'
                 '<p>Luck, location, or a leak?<br>Follow the evidence.</p>'
