@@ -24,6 +24,7 @@ from urllib.request import HTTPRedirectHandler, build_opener, urlopen
 ROOT = Path(__file__).resolve().parents[1]
 WEIGHTS = dict(zip((f"R{i}" for i in range(1, 18)),
                    (3, 3, 2, 2, 3, 3, 4, 3, 2, 2, 2, 3, 2, 2, 1, 2, 1)))
+WEIGHTS["R33"] = 2
 NESTED = "ROYALE_RUBRIC_NESTED"
 
 
@@ -192,6 +193,10 @@ def inspect_page(page):
                              for e in sources]
         result["traces"] = [{"label": e.label, "pages": len(e.get("page_link")), "text": rendered_text(e)}
                             for e in at.expander if e.label.startswith("Trace:")]
+        result["period_default"] = [(w.label, [str(v) for v in w.value])
+                                    for w in list(at.slider) + list(at.select_slider) + list(at.date_input)
+                                    if re.search(r"period|date", w.label, re.I)
+                                    and isinstance(w.value, (tuple, list))]
         result["chart_count"] = len(at.get("plotly_chart")) + len(at.get("arrow_vega_lite_chart"))
         if page == "pages/7_model.py":
             result["model"] = model_evidence(at)
@@ -227,6 +232,17 @@ def page_checks(root):
         except Exception as exc:
             results.append({"page": page, "error": str(exc)})
     return results
+
+
+def default_period_status(page):
+    # Judges compare the first screen with findings: it must open on the full window
+    # (the model page opens on its May-Jun test window).
+    want = ("2025-05", "2025-06") if page["page"] == "pages/7_model.py" else ("2025-01", "2025-06")
+    for label, value in page["period_default"]:
+        if (str(value[0])[:7], str(value[1])[:7]) == want and (
+                len(str(value[0])) == 7 or str(value[1]) in (f"{want[1]}-30", want[1])):
+            return "pass", {"control": label, "default": value}
+    return "fail", {"expected_months": want, "found": page["period_default"]}
 
 
 def page_row(check, pages, predicate):
@@ -372,7 +388,8 @@ def run_checks(root=ROOT, *, run_tests=True, url=None):
     rows = [page_row("R1", pages, lambda p: ("pass" if p["seconds"] < 5 else "fail",
                                            {"seconds": p["seconds"], "limit_seconds": 5})),
             *[page_row(check, pages, lambda p, c=check: (p[c]["status"], p[c]["details"])) for check in ("R2", "R3")],
-            page_row("R4", pages, source_status)]
+            page_row("R4", pages, source_status),
+            page_row("R33", pages, default_period_status)]
     model = next((p for p in pages if p["page"] == "pages/7_model.py"), {})
     text = model.get("text", "")
     model_ok = (not model.get("error") and all(re.search(pattern, text, re.I | re.S) for pattern in
