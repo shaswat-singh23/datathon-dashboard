@@ -249,6 +249,16 @@ def source_status(page):
     return "fail", "Source must name its mart, query/builder and findings file"
 
 
+UNCERTAINTY = r"confidence interval|\bCI\b|\binterval|luck band|\bband\b|\bp-value|credible|bootstrap|\u00b1|\+/-|standard error|\bz-score|uncertaint"
+
+
+def uncertainty_status(page):
+    found = sorted({m.group(0).lower() for m in re.finditer(UNCERTAINTY, page["text"], re.I)})
+    if found:
+        return "pass", {"terms": found, "limitation": "Term presence only; review that each comparison shows it."}
+    return "fail", "No interval, luck band or other uncertainty language rendered on this page"
+
+
 def appendix_check(root):
     appendix = root / "docs/claims_evidence.md"
     text = appendix.read_text() if appendix.exists() else ""
@@ -368,7 +378,7 @@ def run_checks(root=ROOT, *, run_tests=True, url=None):
     rows.extend([
         row("R7", "manual", "Requires claim-by-claim numeric reconciliation with independently checked findings; digit or filename matching cannot prove this."),
         appendix_check(root),
-        row("R9", "manual", "Review uncertainty for every machine/group comparison and interactive state; keywords do not establish coverage or validity."),
+        page_row("R9", pages, uncertainty_status),
         row("R10", "manual", "Audit money helpers, ratios of sums, dated placement joins and off-floor exclusions in every query; source mentions alone are insufficient."),
         row("R11", "manual", "Trace forecast feature provenance and availability dates, including indirect imports; banning words in model code would flag explanatory comments and miss leakage."),
         budget_check(root), deliverables_check(root), deployment_check(root, url),
