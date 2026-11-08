@@ -176,3 +176,20 @@ def test_deployment_check_diagnoses_auth_redirect(tmp_path, monkeypatch):
     result = rubric.deployment_check(tmp_path, "https://x.streamlit.app/")
     assert result["status"] == "fail"
     assert "not public" in result["details"]["diagnosis"]
+
+
+def test_secrets_check_flags_tracked_env_and_key_patterns(tmp_path):
+    def git(*a):
+        subprocess.run(["git", *a], cwd=tmp_path, check=True, capture_output=True)
+    git("init", "-q")
+    (tmp_path / ".gitignore").write_text(".env\n")
+    (tmp_path / "a.py").write_text("x = 1\n")
+    git("add", ".")
+    assert rubric.secrets_check(tmp_path)["status"] == "pass"
+    (tmp_path / "a.py").write_text("KEY = 'sk-ant-" + "a" * 30 + "'\n")
+    git("add", ".")
+    assert rubric.secrets_check(tmp_path)["status"] == "fail"
+    (tmp_path / "a.py").write_text("x = 1\n")
+    (tmp_path / ".gitignore").write_text("")
+    git("add", ".")
+    assert rubric.secrets_check(tmp_path)["status"] == "fail"
