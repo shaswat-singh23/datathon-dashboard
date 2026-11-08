@@ -176,3 +176,12 @@ def test_deployment_check_diagnoses_auth_redirect(tmp_path, monkeypatch):
     result = rubric.deployment_check(tmp_path, "https://x.streamlit.app/")
     assert result["status"] == "fail"
     assert "not public" in result["details"]["diagnosis"]
+
+
+def test_default_period_must_open_on_full_window():
+    full = [("Analysis period", ["2025-01-01", "2025-06-30"])]
+    assert rubric.default_period_status({"page": "app.py", "period_default": full})[0] == "pass"
+    assert rubric.default_period_status({"page": "pages/7_model.py", "period_default": full})[0] == "fail"
+    narrow = [("Analysis period", ["2025-03-01", "2025-06-30"])]
+    assert rubric.default_period_status({"page": "pages/1_machines.py", "period_default": narrow})[0] == "fail"
+    assert rubric.default_period_status({"page": "pages/4_players.py", "period_default": [("p", ["2025-01", "2025-06"])]})[0] == "pass"
