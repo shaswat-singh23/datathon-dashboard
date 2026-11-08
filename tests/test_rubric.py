@@ -176,3 +176,15 @@ def test_deployment_check_diagnoses_auth_redirect(tmp_path, monkeypatch):
     result = rubric.deployment_check(tmp_path, "https://x.streamlit.app/")
     assert result["status"] == "fail"
     assert "not public" in result["details"]["diagnosis"]
+
+
+def test_comp_once_check_flags_double_counted_comp_cost(tmp_path):
+    (tmp_path / "pages").mkdir()
+    (tmp_path / "royale").mkdir()
+    (tmp_path / "pages/ok.py").write_text("share = comp_cost / theo\n# profit = revenue - cogs - comp_cost\n")
+    assert rubric.comp_once_check(tmp_path)["status"] == "pass"
+    (tmp_path / "pages/bad.py").write_text("profit = revenue - cogs - comp_cost\n")
+    (tmp_path / "royale/bad2.py").write_text("margin = win - df.comp_cost\n")
+    result = rubric.comp_once_check(tmp_path)
+    assert result["status"] == "fail"
+    assert result["details"]["hits"] == ["pages/bad.py:1", "royale/bad2.py:1"]
