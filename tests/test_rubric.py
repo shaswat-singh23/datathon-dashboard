@@ -176,3 +176,14 @@ def test_deployment_check_diagnoses_auth_redirect(tmp_path, monkeypatch):
     result = rubric.deployment_check(tmp_path, "https://x.streamlit.app/")
     assert result["status"] == "fail"
     assert "not public" in result["details"]["diagnosis"]
+
+
+def test_tone_check_flags_accusation_and_inducement_but_allows_negation(tmp_path):
+    (tmp_path / "docs").mkdir()
+    (tmp_path / "README.md").write_text("Unusual payouts are leads to inspect.\n")
+    (tmp_path / "docs" / "a.md").write_text("We did not label anyone as cheating.\n")
+    assert rubric.tone_check(tmp_path)["status"] == "pass"
+    (tmp_path / "docs" / "a.md").write_text("Machine 7 shows fraud.\n")
+    assert rubric.tone_check(tmp_path)["status"] == "fail"
+    (tmp_path / "docs" / "a.md").write_text("Get heavy losers to play more.\n")
+    assert rubric.tone_check(tmp_path)["status"] == "fail"
