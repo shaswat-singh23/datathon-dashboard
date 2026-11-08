@@ -22,8 +22,8 @@ from urllib.error import URLError
 from urllib.request import HTTPRedirectHandler, build_opener, urlopen
 
 ROOT = Path(__file__).resolve().parents[1]
-WEIGHTS = dict(zip((f"R{i}" for i in range(1, 18)),
-                   (3, 3, 2, 2, 3, 3, 4, 3, 2, 2, 2, 3, 2, 2, 1, 2, 1)))
+WEIGHTS = {**dict(zip((f"R{i}" for i in range(1, 18)),
+                      (3, 3, 2, 2, 3, 3, 4, 3, 2, 2, 2, 3, 2, 2, 1, 2, 1))), "R49": 2}
 NESTED = "ROYALE_RUBRIC_NESTED"
 
 
@@ -367,6 +367,30 @@ def originality_check(root):
                {"candidates": candidates, "details": "Review whether the result is unexpected; marker plus reproduction heading alone is insufficient."})
 
 
+def baseline_check(root):
+    """R49: recompute the constant training-mean baseline without royale.model."""
+    import pandas as pd
+    try:
+        day = pd.read_parquet(root / "marts/property_day.parquet")
+        fc = pd.read_parquet(root / "marts/q7_forecast.parquet")
+        day["gaming_date"] = pd.to_datetime(day.gaming_date)
+        fc["gaming_date"] = pd.to_datetime(fc.gaming_date)
+        train = day[(day.gaming_date >= "2025-01-01") & (day.gaming_date <= "2025-04-30")]
+        test = day[(day.gaming_date >= "2025-05-01") & (day.gaming_date <= "2025-06-30")]
+        mean = train.coin_in_usd.mean()
+        mae = float((test.coin_in_usd - mean).abs().mean())
+        merged = fc.merge(test[["gaming_date", "coin_in_usd"]], on="gaming_date", suffixes=("", "_day"), validate="1:1")
+        text = (root / "findings/47-forecast-evaluation.md").read_text()
+        cited = re.search(r"Constant training mean\s*\|\s*\$([\d,]+\.\d\d)", text)
+        checks = {"train_days_120": len(train) == 120, "holdout_days_61": len(test) == 61 == len(merged),
+                  "mart_prediction_is_train_mean": bool((fc.constant_prediction_usd - mean).abs().max() < 0.01),
+                  "mart_actuals_match_property_day": bool((merged.coin_in_usd - merged.coin_in_usd_day).abs().max() < 0.01),
+                  "finding_cites_recomputed_mae": bool(cited and abs(float(cited.group(1).replace(",", "")) - mae) < 0.01)}
+    except Exception as exc:
+        return row("R49", "fail", {"error": f"{type(exc).__name__}: {exc}"})
+    return row("R49", "pass" if all(checks.values()) else "fail", {"recomputed_constant_mae_usd": round(mae, 2), **checks})
+
+
 def run_checks(root=ROOT, *, run_tests=True, url=None):
     pages = page_checks(root)
     rows = [page_row("R1", pages, lambda p: ("pass" if p["seconds"] < 5 else "fail",
@@ -400,6 +424,7 @@ def run_checks(root=ROOT, *, run_tests=True, url=None):
     chart_details = [{"page": p["page"], **p.get("charts", {"problems": [p.get("error", "No chart inspection")]})} for p in pages]
     rows.append(row("R16", "fail" if any(p["problems"] for p in chart_details) else "manual", chart_details))
     rows.append(originality_check(root))
+    rows.append(baseline_check(root))
     return sorted(rows, key=lambda r: int(r["id"][1:]))
 
 
