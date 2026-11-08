@@ -316,6 +316,38 @@ def mart_and_tests_check(root, run_tests):
         return row("R15", "fail", {**details, "pytest": "Timed out after 600 seconds"})
 
 
+ACTION_ELEMENTS = {
+    "cost": r"\$\s?\d",
+    "expected effect": r"incremental theo|assumed benefit|recover|verified configuration|\$0",
+    "uncertainty": r"scenario|low/high|noisy|confound|unknown|not proof|not measured|interval",
+    "measurement plan": r"measurement",
+}
+
+
+def missing_action_elements(text):
+    return [name for name, pattern in ACTION_ELEMENTS.items() if not re.search(pattern, text, re.I)]
+
+
+def action_text_gaps(root):
+    """Render the actions page once per drill option and list missing plan elements."""
+    sys.path.insert(0, str(root))
+    from streamlit.testing.v1 import AppTest
+    at = AppTest.from_file(str(root / "app.py"), default_timeout=30).run()
+    at.switch_page("pages/6_actions.py").run()
+    if at.exception:
+        raise RuntimeError(f"actions page raised: {at.exception[0].value}")
+    box = next(w for w in at.selectbox if w.label == "Action drill")
+    gaps = {}
+    for option in list(box.options):
+        at.selectbox(key=box.key).select(option).run()
+        if at.exception:
+            raise RuntimeError(f"actions page raised for {option}: {at.exception[0].value}")
+        missing = missing_action_elements(rendered_text(at))
+        if missing:
+            gaps[option] = missing
+    return gaps, len(box.options)
+
+
 def budget_check(root):
     sys.path.insert(0, str(root))
     from royale import budget
@@ -329,9 +361,12 @@ def budget_check(root):
         catalog = data.loc[data.record_type == "catalog"]
         plan = proposed_plan(data)
         violations = budget.validate_plan(catalog, plan)
+        gaps, options = action_text_gaps(root)
         details = {"violations": violations, "cost_usd": budget.plan_cost_usd(catalog, plan),
-                   "details": "Runtime plan validation measured. Review each action's expected effect, uncertainty and measurement plan manually."}
-        return row("R12", "fail" if violations else "manual", details)
+                   "options_checked": options, "options_missing_elements": gaps,
+                   "limitation": "Plan validation is exact. The text check confirms each option's rendered page mentions cost, "
+                                 "effect, uncertainty and measurement, not that the wording is sound."}
+        return row("R12", "fail" if violations or gaps else "pass", details)
     except Exception as exc:
         return row("R12", "fail", str(exc))
 

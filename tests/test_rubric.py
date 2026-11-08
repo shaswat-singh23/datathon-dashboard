@@ -165,3 +165,9 @@ def test_checker_cli_writes_complete_report_without_raw_data(tmp_path):
     # Every route must have actually been attempted, even if its app crashed.
     assert len(rows[0]["details"]) == 1 + len(list((ROOT / "pages").glob("*.py")))
     assert not any(p["details"] == "" for p in rows[0]["details"])
+
+
+def test_action_elements_flag_missing_measurement_and_uncertainty():
+    ok = "Spend $1,200. Incremental theo $0 low/high scenario. Measurement: compare with control."
+    assert rubric.missing_action_elements(ok) == []
+    assert rubric.missing_action_elements("Spend $1,200. Incremental theo $5.") == ["uncertainty", "measurement plan"]
