@@ -176,3 +176,14 @@ def test_deployment_check_diagnoses_auth_redirect(tmp_path, monkeypatch):
     result = rubric.deployment_check(tmp_path, "https://x.streamlit.app/")
     assert result["status"] == "fail"
     assert "not public" in result["details"]["diagnosis"]
+
+
+def test_dependency_check_flags_undeclared_import(tmp_path):
+    (tmp_path / "pages").mkdir()
+    (tmp_path / "royale").mkdir()
+    (tmp_path / "pyproject.toml").write_text('[project]\ndependencies = [\n    "pandas>=3",\n    "scikit-learn>=1",\n]\n')
+    (tmp_path / "app.py").write_text("import pandas, os\nfrom sklearn.linear_model import Ridge\nfrom royale import x\n")
+    assert rubric.dependency_check(tmp_path)["status"] == "pass"
+    (tmp_path / "pages" / "1_a.py").write_text("import requests\n")
+    result = rubric.dependency_check(tmp_path)
+    assert result["status"] == "fail" and "requests" in result["details"]["undeclared_imports"]
