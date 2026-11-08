@@ -176,3 +176,25 @@ def test_deployment_check_diagnoses_auth_redirect(tmp_path, monkeypatch):
     result = rubric.deployment_check(tmp_path, "https://x.streamlit.app/")
     assert result["status"] == "fail"
     assert "not public" in result["details"]["diagnosis"]
+
+
+def test_offfloor_check_flags_null_location_and_duplicates(tmp_path):
+    import duckdb
+    marts = tmp_path / "marts"
+    marts.mkdir()
+
+    def write(name, rows):
+        duckdb.sql(f"COPY (SELECT * FROM (VALUES {rows}) t(record_type, machine_id, gaming_date, location_id)) "
+                   f"TO '{(marts / (name + '.parquet')).as_posix()}' (FORMAT parquet)")
+    good = "('machine_day', 1, DATE '2025-01-01', 5), ('machine_day', 2, DATE '2025-01-01', 6), ('fault', 1, DATE '2025-01-01', NULL)"
+    for name, _ in rubric.MACHINE_DAY_MARTS:
+        write(name, good)
+    assert rubric.offfloor_check(tmp_path)["status"] == "fail"  # the fault row is counted by marts without record_type filtering
+    for name, record_type in rubric.MACHINE_DAY_MARTS:
+        if record_type is None:
+            write(name, good.rsplit(", ('fault'", 1)[0])
+    assert rubric.offfloor_check(tmp_path)["status"] == "pass"
+    write("q1_machines", "('machine_day', 1, DATE '2025-01-01', NULL)")
+    assert rubric.offfloor_check(tmp_path)["status"] == "fail"
+    write("q1_machines", "('machine_day', 1, DATE '2025-01-01', 5), ('machine_day', 1, DATE '2025-01-01', 5)")
+    assert rubric.offfloor_check(tmp_path)["status"] == "fail"
