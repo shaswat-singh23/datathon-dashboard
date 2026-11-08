@@ -165,3 +165,16 @@ def test_checker_cli_writes_complete_report_without_raw_data(tmp_path):
     # Every route must have actually been attempted, even if its app crashed.
     assert len(rows[0]["details"]) == 1 + len(list((ROOT / "pages").glob("*.py")))
     assert not any(p["details"] == "" for p in rows[0]["details"])
+
+
+def test_r7_numbers_must_match_a_checked_finding(tmp_path):
+    (tmp_path / "findings").mkdir()
+    (tmp_path / "docs").mkdir()
+    (tmp_path / "findings/1-a.md").write_text("- Checked by: Kyle\nMAE $218,258.10 and 96.9600% paid\n")
+    (tmp_path / "findings/2-b.md").write_text("- Checked by: unchecked\nLift 777.5\n")
+    (tmp_path / "docs/writeup.md").write_text("MAE **$218,258/day**, 96.96% paid, see [x](f.md#999) PR #48 in 12 seconds.")
+    assert rubric.numbers_check(tmp_path)["status"] == "pass"
+    (tmp_path / "docs/writeup.md").write_text("Lift is 777.5 and MAE 218,259.")
+    result = rubric.numbers_check(tmp_path)
+    assert result["status"] == "fail"
+    assert result["details"]["unmatched_numbers"]["docs/writeup.md"] == ["218259", "777.5"]

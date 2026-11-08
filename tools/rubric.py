@@ -268,6 +268,52 @@ def appendix_check(root):
                 "limitation": "Checks coverage and nonempty fields, not scientific validity."})
 
 
+NUMBER = re.compile(r"\$?\d[\d,]*(?:\.\d+)?%?")
+CLAIM_DOCS = ("README.md", "docs/writeup.md", "docs/presentation.md", "docs/demo_script.md")
+
+
+def doc_numbers(text):
+    """Numbers in prose, ignoring link targets, URLs and 1-digit counts like list numbering."""
+    text = re.sub(r"\]\([^)]*\)", "]", text)
+    text = re.sub(r"^(\|\s*\d+:\d+.*)\|\s*\d+\s*\|\s*$", r"\1", text, flags=re.M)  # script word-count column
+    text = re.sub(r"https?://\S+|`[^`]*`", " ", text)
+    # Issue/PR references, mm:ss times, screen sizes and script-timing units are not data claims.
+    text = re.sub(r"(?:PR|pull|issues?|#)\s*#?\d+|\b\d+:\d+\b|\d+\s*[×x]\s*\d+", " ", text, flags=re.I)
+    text = re.sub(r"\b\d[\d.]*(?:[–-]\d+)?\s*(?:s|seconds?|(?:spoken )?words?(?: per minute)?|segments?)\b", " ", text)
+    found = set()
+    for token in NUMBER.findall(text):
+        digits = token.strip("$%").replace(",", "").rstrip(".")
+        if len(digits.replace(".", "")) >= 2:
+            found.add(digits)
+    return found
+
+
+def numbers_check(root):
+    checked_text = ""
+    for finding in sorted((root / "findings").glob("*.md")):
+        body = finding.read_text()
+        match = re.search(r"Checked by:\s*(.*)", body)
+        if finding.name != "README.md" and match and not match.group(1).strip().lower().startswith("unchecked"):
+            checked_text += body.replace(",", "") + "\n"
+    values = {float(v) for v in re.findall(r"\d+(?:\.\d+)?", checked_text)}
+
+    def present(number):
+        places = len(number.partition(".")[2])
+        target = round(float(number), places)
+        return any(abs(round(v, places) - target) < 1e-9 for v in values)
+
+    unmatched = {}
+    for name in CLAIM_DOCS:
+        path = root / name
+        if path.exists():
+            missing = sorted(n for n in doc_numbers(path.read_text()) if not present(n))
+            if missing:
+                unmatched[name] = missing
+    return row("R7", "fail" if unmatched else "pass",
+               {"unmatched_numbers": unmatched, "docs": list(CLAIM_DOCS),
+                "limitation": "Matches each number, at its printed precision, to some number in a checked finding: proves presence, not that it is the same claim."})
+
+
 def deliverables_check(root):
     writeup, disclosure = root / "docs/writeup.md", root / "docs/ai_disclosure.md"
     words = len(writeup.read_text().split()) if writeup.exists() else None
@@ -366,7 +412,7 @@ def run_checks(root=ROOT, *, run_tests=True, url=None):
     rows.append(row("R6", "manual" if trace_ok else "fail",
                     {"traces": traces, "details": "Trace expanders checked for page and finding links; review coverage of every recommendation and alternative drill."}))
     rows.extend([
-        row("R7", "manual", "Requires claim-by-claim numeric reconciliation with independently checked findings; digit or filename matching cannot prove this."),
+        numbers_check(root),
         appendix_check(root),
         row("R9", "manual", "Review uncertainty for every machine/group comparison and interactive state; keywords do not establish coverage or validity."),
         row("R10", "manual", "Audit money helpers, ratios of sums, dated placement joins and off-floor exclusions in every query; source mentions alone are insufficient."),
