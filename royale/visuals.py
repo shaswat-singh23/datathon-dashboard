@@ -8,6 +8,7 @@ no forecast is fitted. Figures use the theme palette and leave styling to the te
 from __future__ import annotations
 
 import math
+import re
 
 import pandas as pd
 import plotly.graph_objects as go
@@ -23,17 +24,20 @@ MUTED = "#968A7A"    # de-emphasized series, >= 3:1 on the chart paper
 
 
 def label(fig: go.Figure, title: str, x: str | None = None, y: str | None = None) -> go.Figure:
-    """Accessibility labels: set a chart title and axis titles, never overriding ones already set."""
+    """Accessibility labels: set a chart title and axis titles, replacing only missing or raw column-name axis titles."""
     def has(t):
         t = getattr(t, "text", t)
         return bool(t)
+    def raw(t):
+        # Plotly Express fills axis titles with column names such as "month" or "value".
+        return bool(re.fullmatch(r"[a-z0-9_]+", getattr(t, "text", t) or ""))
     if not has(fig.layout.title):
         top = max(fig.layout.margin.t or 0, 48)
         fig.update_layout(title=dict(text=title, x=0.02, xanchor="left", font=dict(size=14)),
                           margin=dict(t=top))
-    if x and not has(fig.layout.xaxis.title):
+    if x and (not has(fig.layout.xaxis.title) or raw(fig.layout.xaxis.title)):
         fig.update_xaxes(title=x)
-    if y and not has(fig.layout.yaxis.title):
+    if y and (not has(fig.layout.yaxis.title) or raw(fig.layout.yaxis.title)):
         fig.update_yaxes(title=y)
     return fig
 
