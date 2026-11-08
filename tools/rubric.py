@@ -24,6 +24,7 @@ from urllib.request import HTTPRedirectHandler, build_opener, urlopen
 ROOT = Path(__file__).resolve().parents[1]
 WEIGHTS = dict(zip((f"R{i}" for i in range(1, 18)),
                    (3, 3, 2, 2, 3, 3, 4, 3, 2, 2, 2, 3, 2, 2, 1, 2, 1)))
+WEIGHTS["R43"] = 2
 NESTED = "ROYALE_RUBRIC_NESTED"
 
 
@@ -367,6 +368,22 @@ def originality_check(root):
                {"candidates": candidates, "details": "Review whether the result is unexpected; marker plus reproduction heading alone is insufficient."})
 
 
+def cited_findings_check(root):
+    cited = {}
+    for path in [root / "app.py", *sorted((root / "pages").glob("*.py"))]:
+        if path.exists():
+            for name in re.findall(r"findings/([A-Za-z0-9_-]+\.md)", path.read_text()):
+                cited.setdefault(name, set()).add(path.name)
+    problems = []
+    for name, users in sorted(cited.items()):
+        file = root / "findings" / name
+        match = re.search(r"^- Checked by:\s*(.*)$", file.read_text(), re.M) if file.exists() else None
+        if match is None or match.group(1).strip().lower().startswith("unchecked"):
+            problems.append({"finding": name, "cited_by": sorted(users),
+                             "problem": "missing" if not file.exists() else "unchecked"})
+    return row("R43", "fail" if problems else "pass", {"cited": len(cited), "problems": problems})
+
+
 def run_checks(root=ROOT, *, run_tests=True, url=None):
     pages = page_checks(root)
     rows = [page_row("R1", pages, lambda p: ("pass" if p["seconds"] < 5 else "fail",
@@ -400,6 +417,7 @@ def run_checks(root=ROOT, *, run_tests=True, url=None):
     chart_details = [{"page": p["page"], **p.get("charts", {"problems": [p.get("error", "No chart inspection")]})} for p in pages]
     rows.append(row("R16", "fail" if any(p["problems"] for p in chart_details) else "manual", chart_details))
     rows.append(originality_check(root))
+    rows.append(cited_findings_check(root))
     return sorted(rows, key=lambda r: int(r["id"][1:]))
 
 
