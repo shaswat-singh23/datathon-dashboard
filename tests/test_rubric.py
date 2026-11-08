@@ -176,3 +176,14 @@ def test_deployment_check_diagnoses_auth_redirect(tmp_path, monkeypatch):
     result = rubric.deployment_check(tmp_path, "https://x.streamlit.app/")
     assert result["status"] == "fail"
     assert "not public" in result["details"]["diagnosis"]
+
+
+def test_llm_client_import_fails_r30(tmp_path):
+    (tmp_path / "royale").mkdir()
+    (tmp_path / "pages").mkdir()
+    (tmp_path / "app.py").write_text("import pandas\n")
+    (tmp_path / "royale/ok.py").write_text("# import openai\nfrom . import x\n")
+    assert rubric.no_llm_client_check(tmp_path)["status"] == "pass"
+    (tmp_path / "pages/bad.py").write_text("from anthropic import Anthropic\n")
+    result = rubric.no_llm_client_check(tmp_path)
+    assert result["status"] == "fail" and "pages/bad.py: anthropic" in result["details"]["llm_imports"]

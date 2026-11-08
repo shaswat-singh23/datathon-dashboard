@@ -8,6 +8,7 @@ means the runner itself failed. ``--skip-pytest`` avoids recursion in its pytest
 from __future__ import annotations
 
 import argparse
+import ast
 from contextlib import ExitStack
 import json
 import os
@@ -24,7 +25,9 @@ from urllib.request import HTTPRedirectHandler, build_opener, urlopen
 ROOT = Path(__file__).resolve().parents[1]
 WEIGHTS = dict(zip((f"R{i}" for i in range(1, 18)),
                    (3, 3, 2, 2, 3, 3, 4, 3, 2, 2, 2, 3, 2, 2, 1, 2, 1)))
+WEIGHTS["R30"] = 1
 NESTED = "ROYALE_RUBRIC_NESTED"
+LLM_MODULES = {"anthropic", "openai", "google.generativeai", "litellm", "langchain", "cohere", "mistralai"}
 
 
 def row(check, status, details):
@@ -367,6 +370,19 @@ def originality_check(root):
                {"candidates": candidates, "details": "Review whether the result is unexpected; marker plus reproduction heading alone is insufficient."})
 
 
+def no_llm_client_check(root):
+    """R30: the AI disclosure says no LLM client ships in royale/, pages/ or app.py."""
+    files = [root / "app.py", *sorted((root / "royale").rglob("*.py")), *sorted((root / "pages").rglob("*.py"))]
+    hits = []
+    for path in (f for f in files if f.exists()):
+        for node in ast.walk(ast.parse(path.read_text())):
+            names = ([a.name for a in node.names] if isinstance(node, ast.Import)
+                     else [node.module or ""] if isinstance(node, ast.ImportFrom) and not node.level else [])
+            hits += [f"{path.relative_to(root)}: {n}" for n in names
+                     if any(n == m or n.startswith(m + ".") for m in LLM_MODULES)]
+    return row("R30", "fail" if hits else "pass", {"files_scanned": len(files), "llm_imports": hits})
+
+
 def run_checks(root=ROOT, *, run_tests=True, url=None):
     pages = page_checks(root)
     rows = [page_row("R1", pages, lambda p: ("pass" if p["seconds"] < 5 else "fail",
@@ -400,6 +416,7 @@ def run_checks(root=ROOT, *, run_tests=True, url=None):
     chart_details = [{"page": p["page"], **p.get("charts", {"problems": [p.get("error", "No chart inspection")]})} for p in pages]
     rows.append(row("R16", "fail" if any(p["problems"] for p in chart_details) else "manual", chart_details))
     rows.append(originality_check(root))
+    rows.append(no_llm_client_check(root))
     return sorted(rows, key=lambda r: int(r["id"][1:]))
 
 
