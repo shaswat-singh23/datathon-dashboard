@@ -24,6 +24,11 @@ from urllib.request import urlopen
 ROOT = Path(__file__).resolve().parents[1]
 WEIGHTS = dict(zip((f"R{i}" for i in range(1, 18)),
                    (3, 3, 2, 2, 3, 3, 4, 3, 2, 2, 2, 3, 2, 2, 1, 2, 1)))
+WEIGHTS["R20"] = 2
+ACCUSATION = re.compile(r"\b(fraud\w*|cheat\w*|theft|thie(?:f|ves)|stole\w*|steal\w*|rigged|collu\w*|"
+                        r"embezzl\w*|guilty|tamper\w*|criminal\w*|skimm\w*)\b", re.I)
+NEGATION = re.compile(r"\b(no|not|never|without|nor|neither|isn't|doesn't|don't|cannot|can't)\b|"
+                      r"\b(rule[sd]? out|does not prove|do not prove|not evidence of|not a finding of)\b", re.I)
 NESTED = "ROYALE_RUBRIC_NESTED"
 
 
@@ -277,6 +282,21 @@ def deliverables_check(root):
                 "word_rule": "Whitespace-separated tokens, including headings and links (conservative)."})
 
 
+def accusation_check(root):
+    """R20: AGENTS.md 'No accusations'. Flags accusatory words unless the sentence negates them."""
+    hits = []
+    files = [root / "README.md", root / "app.py", *(root / "docs").glob("*.md"),
+             *(root / "pages").glob("*.py"), *(root / "findings").glob("*.md")]
+    for path in files:
+        if not path.is_file():
+            continue
+        for number, line in enumerate(path.read_text().splitlines(), 1):
+            if ACCUSATION.search(line) and not NEGATION.search(line):
+                hits.append({"file": str(path.relative_to(root)), "line": number, "text": line.strip()[:120]})
+    return row("R20", "fail" if hits else "pass",
+               {"hits": hits, "limitation": "Word list plus same-line negation; unusual payouts must stay framed as leads to inspect."})
+
+
 def deployment_check(root, url=None):
     if not url:
         readme = root / "README.md"
@@ -377,6 +397,7 @@ def run_checks(root=ROOT, *, run_tests=True, url=None):
     chart_details = [{"page": p["page"], **p.get("charts", {"problems": [p.get("error", "No chart inspection")]})} for p in pages]
     rows.append(row("R16", "fail" if any(p["problems"] for p in chart_details) else "manual", chart_details))
     rows.append(originality_check(root))
+    rows.append(accusation_check(root))
     return sorted(rows, key=lambda r: int(r["id"][1:]))
 
 
