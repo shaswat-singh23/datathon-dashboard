@@ -8,6 +8,7 @@ means the runner itself failed. ``--skip-pytest`` avoids recursion in its pytest
 from __future__ import annotations
 
 import argparse
+import ast
 from contextlib import ExitStack
 import json
 import os
@@ -24,6 +25,9 @@ from urllib.request import HTTPRedirectHandler, build_opener, urlopen
 ROOT = Path(__file__).resolve().parents[1]
 WEIGHTS = dict(zip((f"R{i}" for i in range(1, 18)),
                    (3, 3, 2, 2, 3, 3, 4, 3, 2, 2, 2, 3, 2, 2, 1, 2, 1)))
+WEIGHTS["R31"] = 2
+# import name -> distribution name, plus modules that always arrive as a declared package's dependency
+DIST_ALIASES = {"sklearn": "scikit-learn", "dotenv": "python-dotenv", "numpy": "pandas"}
 NESTED = "ROYALE_RUBRIC_NESTED"
 
 
@@ -367,6 +371,26 @@ def originality_check(root):
                {"candidates": candidates, "details": "Review whether the result is unexpected; marker plus reproduction heading alone is insufficient."})
 
 
+def dependency_check(root):
+    """R31: third-party imports in shipped code must be declared in pyproject.toml."""
+    declared = {re.split(r"[<>=!~\[ ;]", d.strip().strip('"\''))[0].lower().replace("_", "-")
+                for d in re.findall(r'^\s*"([^"]+)",?\s*$',
+                                   (root / "pyproject.toml").read_text().split("dependencies = [", 1)[-1].split("]", 1)[0], re.M)}
+    files = [f for f in [root / "app.py", *(root / "pages").glob("*.py"), *(root / "royale").rglob("*.py")] if f.exists()]
+    local = {f.stem for f in files} | {"royale"}
+    missing = {}
+    for f in files:
+        for node in ast.walk(ast.parse(f.read_text())):
+            names = ([a.name for a in node.names] if isinstance(node, ast.Import)
+                     else [node.module] if isinstance(node, ast.ImportFrom) and node.level == 0 and node.module else [])
+            for name in names:
+                top = name.split(".")[0]
+                dist = DIST_ALIASES.get(top, top).lower().replace("_", "-")
+                if top not in sys.stdlib_module_names and top not in local and dist not in declared:
+                    missing.setdefault(top, []).append(str(f.relative_to(root)))
+    return row("R31", "fail" if missing else "pass", {"declared": sorted(declared), "undeclared_imports": missing})
+
+
 def run_checks(root=ROOT, *, run_tests=True, url=None):
     pages = page_checks(root)
     rows = [page_row("R1", pages, lambda p: ("pass" if p["seconds"] < 5 else "fail",
@@ -400,6 +424,7 @@ def run_checks(root=ROOT, *, run_tests=True, url=None):
     chart_details = [{"page": p["page"], **p.get("charts", {"problems": [p.get("error", "No chart inspection")]})} for p in pages]
     rows.append(row("R16", "fail" if any(p["problems"] for p in chart_details) else "manual", chart_details))
     rows.append(originality_check(root))
+    rows.append(dependency_check(root))
     return sorted(rows, key=lambda r: int(r["id"][1:]))
 
 
