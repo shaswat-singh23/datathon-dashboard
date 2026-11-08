@@ -24,6 +24,7 @@ from urllib.request import urlopen
 ROOT = Path(__file__).resolve().parents[1]
 WEIGHTS = dict(zip((f"R{i}" for i in range(1, 18)),
                    (3, 3, 2, 2, 3, 3, 4, 3, 2, 2, 2, 3, 2, 2, 1, 2, 1)))
+WEIGHTS["R23"] = 1
 NESTED = "ROYALE_RUBRIC_NESTED"
 
 
@@ -344,6 +345,18 @@ def originality_check(root):
                {"candidates": candidates, "details": "Review whether the result is unexpected; marker plus reproduction heading alone is insufficient."})
 
 
+PLACEHOLDER = re.compile(r"\bTODO\b|\bTBD\b|\bFIXME\b|lorem ipsum|_{3,}|\bplaceholder\b", re.I)
+
+
+def placeholder_check(root):
+    paths = [root / "README.md", root / "app.py", *sorted((root / "docs").glob("*.md")),
+             *sorted((root / "findings").glob("*.md")), *sorted((root / "pages").glob("*.py"))]
+    hits = [f"{p.relative_to(root)}:{n}" for p in paths if p.is_file()
+            for n, line in enumerate(p.read_text().splitlines(), 1) if PLACEHOLDER.search(line)]
+    return row("R23", "fail" if hits else "pass",
+               {"hits": hits[:20], "limitation": "Pattern match; streamlit's own placeholder= argument will be flagged and should be reworded."})
+
+
 def run_checks(root=ROOT, *, run_tests=True, url=None):
     pages = page_checks(root)
     rows = [page_row("R1", pages, lambda p: ("pass" if p["seconds"] < 5 else "fail",
@@ -377,6 +390,7 @@ def run_checks(root=ROOT, *, run_tests=True, url=None):
     chart_details = [{"page": p["page"], **p.get("charts", {"problems": [p.get("error", "No chart inspection")]})} for p in pages]
     rows.append(row("R16", "fail" if any(p["problems"] for p in chart_details) else "manual", chart_details))
     rows.append(originality_check(root))
+    rows.append(placeholder_check(root))
     return sorted(rows, key=lambda r: int(r["id"][1:]))
 
 
