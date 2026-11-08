@@ -31,6 +31,10 @@ Payout z has the opposite sign to the house-win luck z on the existing Machines 
 
 The stricter screen does not disproportionately flag high/very-high classes in this window: both have zero candidates. Their larger typical uncertainty is allowed for explicitly. These descriptive rates do **not** prove equal false-positive rates: class sizes, bets, exposure, game distributions and possible configuration/meter issues differ. In particular, only 18 machines are very-high volatility. Mixed-class machines would be labeled `mixed`; none change configuration in this release.
 
+## Unexpected result
+
+Expected: with 310 machines and a simple per-machine |z| > 1.96 screen, about 5% (~15) would flag by chance, mostly noise. Found: the simple screen flags 24/310 (7.7%), but the variance-adjusted ±3.8 screen leaves exactly one, M-1158, at payout z +4.570 (observed RTP 96.96% vs configured 90.00%). It is also the manager's second-lowest raw house-win machine. The baseline is the simple screen; the surprise is that one low performer stands out far beyond what luck among 310 machines explains. This remains an inspection lead, not a finding of wrongdoing. To reproduce, follow the Reproduce section below.
+
 ## Reproduce
 
 Build the mart, run the suite, then run this independent raw-data comparison:
