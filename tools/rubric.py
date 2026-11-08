@@ -24,6 +24,7 @@ from urllib.request import HTTPRedirectHandler, build_opener, urlopen
 ROOT = Path(__file__).resolve().parents[1]
 WEIGHTS = dict(zip((f"R{i}" for i in range(1, 18)),
                    (3, 3, 2, 2, 3, 3, 4, 3, 2, 2, 2, 3, 2, 2, 1, 2, 1)))
+WEIGHTS["R44"] = 2
 NESTED = "ROYALE_RUBRIC_NESTED"
 
 
@@ -339,6 +340,31 @@ def mart_and_tests_check(root, run_tests):
         return row("R15", "fail", {**details, "pytest": "Timed out after 600 seconds"})
 
 
+MACHINE_DAY_MARTS = (("q1_machines", None), ("q1_leak", None),
+                     ("q3_downtime", "machine_day"), ("q6_actions", "machine_day"))
+
+
+def offfloor_check(root):
+    """R44: machine-day rows in committed marts all have a location and a unique machine/date key."""
+    import duckdb
+    problems, counts = [], {}
+    for name, record_type in MACHINE_DAY_MARTS:
+        path = root / "marts" / f"{name}.parquet"
+        if not path.is_file():
+            problems.append(f"{name}: mart missing")
+            continue
+        where = f"WHERE record_type = '{record_type}'" if record_type else ""
+        total, null_loc, keys = duckdb.sql(
+            f"SELECT count(*), count(*) FILTER (WHERE location_id IS NULL), "
+            f"count(DISTINCT (machine_id, gaming_date)) FROM '{path.as_posix()}' {where}").fetchall()[0]
+        counts[name] = {"rows": total, "null_location": null_loc, "distinct_keys": keys}
+        if not total or null_loc or keys != total:
+            problems.append(f"{name}: rows={total} null_location={null_loc} distinct_keys={keys}")
+    return row("R44", "fail" if problems else "pass",
+               {"marts": counts, "problems": problems,
+                "limitation": "Checks the committed marts only; the date-correct placements join is still R10's manual audit."})
+
+
 def budget_check(root):
     sys.path.insert(0, str(root))
     from royale import budget
@@ -394,7 +420,7 @@ def run_checks(root=ROOT, *, run_tests=True, url=None):
         row("R9", "manual", "Review uncertainty for every machine/group comparison and interactive state; keywords do not establish coverage or validity."),
         row("R10", "manual", "Audit money helpers, ratios of sums, dated placement joins and off-floor exclusions in every query; source mentions alone are insufficient."),
         row("R11", "manual", "Trace forecast feature provenance and availability dates, including indirect imports; banning words in model code would flag explanatory comments and miss leakage."),
-        budget_check(root), deliverables_check(root), deployment_check(root, url),
+        offfloor_check(root), budget_check(root), deliverables_check(root), deployment_check(root, url),
         mart_and_tests_check(root, run_tests),
     ])
     chart_details = [{"page": p["page"], **p.get("charts", {"problems": [p.get("error", "No chart inspection")]})} for p in pages]
