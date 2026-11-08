@@ -165,3 +165,16 @@ def test_checker_cli_writes_complete_report_without_raw_data(tmp_path):
     # Every route must have actually been attempted, even if its app crashed.
     assert len(rows[0]["details"]) == 1 + len(list((ROOT / "pages").glob("*.py")))
     assert not any(p["details"] == "" for p in rows[0]["details"])
+
+
+def test_findings_check_flags_missing_fields_and_unchecked(tmp_path):
+    (tmp_path / "findings").mkdir()
+    full = "- Issue: #1\n- Claim: a\n- Evidence: b\n- So what: c\n- Checked by: "
+    (tmp_path / "findings/1-ok.md").write_text(full + "Kyle")
+    assert rubric.findings_check(tmp_path)["status"] == "pass"
+    (tmp_path / "findings/2-bad.md").write_text(full + "unchecked")
+    (tmp_path / "findings/3-short.md").write_text("- Claim: a")
+    result = rubric.findings_check(tmp_path)
+    assert result["status"] == "fail"
+    assert result["details"]["unchecked"] == ["2-bad.md"]
+    assert "3-short.md" in result["details"]["missing_fields"]

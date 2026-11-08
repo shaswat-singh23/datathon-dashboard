@@ -22,8 +22,8 @@ from urllib.error import URLError
 from urllib.request import urlopen
 
 ROOT = Path(__file__).resolve().parents[1]
-WEIGHTS = dict(zip((f"R{i}" for i in range(1, 18)),
-                   (3, 3, 2, 2, 3, 3, 4, 3, 2, 2, 2, 3, 2, 2, 1, 2, 1)))
+WEIGHTS = dict(zip((f"R{i}" for i in range(1, 19)),
+                   (3, 3, 2, 2, 3, 3, 4, 3, 2, 2, 2, 3, 2, 2, 1, 2, 1, 2)))
 NESTED = "ROYALE_RUBRIC_NESTED"
 
 
@@ -344,6 +344,24 @@ def originality_check(root):
                {"candidates": candidates, "details": "Review whether the result is unexpected; marker plus reproduction heading alone is insufficient."})
 
 
+def findings_check(root):
+    fields = ("Issue:", "Claim:", "Evidence:", "So what:", "Checked by:")
+    malformed, unchecked = {}, []
+    for path in sorted((root / "findings").glob("*.md")):
+        if path.name == "README.md":
+            continue
+        text = path.read_text()
+        absent = [f for f in fields if f not in text]
+        if absent:
+            malformed[path.name] = absent
+        checked = re.search(r"Checked by:\s*(.*)", text)
+        if checked and checked.group(1).strip().lower().startswith("unchecked"):
+            unchecked.append(path.name)
+    return row("R18", "fail" if malformed or unchecked else "pass",
+               {"missing_fields": malformed, "unchecked": unchecked,
+                "limitation": "Checks format and the Checked by label, not whether the checker was really independent."})
+
+
 def run_checks(root=ROOT, *, run_tests=True, url=None):
     pages = page_checks(root)
     rows = [page_row("R1", pages, lambda p: ("pass" if p["seconds"] < 5 else "fail",
@@ -377,6 +395,7 @@ def run_checks(root=ROOT, *, run_tests=True, url=None):
     chart_details = [{"page": p["page"], **p.get("charts", {"problems": [p.get("error", "No chart inspection")]})} for p in pages]
     rows.append(row("R16", "fail" if any(p["problems"] for p in chart_details) else "manual", chart_details))
     rows.append(originality_check(root))
+    rows.append(findings_check(root))
     return sorted(rows, key=lambda r: int(r["id"][1:]))
 
 
