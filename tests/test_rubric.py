@@ -165,3 +165,16 @@ def test_checker_cli_writes_complete_report_without_raw_data(tmp_path):
     # Every route must have actually been attempted, even if its app crashed.
     assert len(rows[0]["details"]) == 1 + len(list((ROOT / "pages").glob("*.py")))
     assert not any(p["details"] == "" for p in rows[0]["details"])
+
+
+def test_responsible_play_scan_flags_encouragement_not_negation():
+    bad = "Offer bonuses to encourage heavy losers to play more."
+    good = "We do not recommend encouraging heavy losers to play more."
+    assert rubric.play_more_hits(bad) == [bad]
+    assert rubric.play_more_hits(good) == []
+
+
+def test_responsible_play_check_passes_on_repo_text():
+    result = rubric.responsible_play_check(ROOT)
+    assert result["status"] == "pass", result["details"]
+    assert result["details"]["files_scanned"] > 10
