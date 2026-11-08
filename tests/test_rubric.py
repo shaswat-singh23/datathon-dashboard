@@ -165,3 +165,8 @@ def test_checker_cli_writes_complete_report_without_raw_data(tmp_path):
     # Every route must have actually been attempted, even if its app crashed.
     assert len(rows[0]["details"]) == 1 + len(list((ROOT / "pages").glob("*.py")))
     assert not any(p["details"] == "" for p in rows[0]["details"])
+
+
+def test_drill_sweep_is_weighted_and_scores():
+    assert rubric.WEIGHTS["R19"] == 2
+    assert rubric.score([rubric.row("R19", "pass", "ok")])["earned"] == 2

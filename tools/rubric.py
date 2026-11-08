@@ -24,6 +24,7 @@ from urllib.request import urlopen
 ROOT = Path(__file__).resolve().parents[1]
 WEIGHTS = dict(zip((f"R{i}" for i in range(1, 18)),
                    (3, 3, 2, 2, 3, 3, 4, 3, 2, 2, 2, 3, 2, 2, 1, 2, 1)))
+WEIGHTS["R19"] = 2
 NESTED = "ROYALE_RUBRIC_NESTED"
 
 
@@ -102,6 +103,44 @@ def change_drill(at):
         clean(at)
         return
     raise RuntimeError("Drill controls have no alternative selection")
+
+
+DRILL = r"bank|zone|machine|region|tier|age band|group|action drill|error breakdown"
+
+
+def sweep_drills(page):
+    """Select every option of every drill control (one at a time, defaults restored) and
+    require a clean render that still shows metrics or tables."""
+    from streamlit.testing.v1 import AppTest
+
+    def fresh():
+        at = AppTest.from_file(str(ROOT / "app.py"), default_timeout=30).run()
+        if page != "app.py":
+            at.switch_page(page).run()
+        clean(at)
+        return at
+    probe = fresh()
+    controls = [(kind, i, w.label, len(w.options))
+                for kind in ("selectbox", "multiselect", "radio")
+                for i, w in enumerate(probe.get(kind)) if re.search(DRILL, w.label, re.I)]
+    failures, tried = [], 0
+    for kind, i, label, count in controls:
+        for option in range(count):
+            tried += 1
+            try:
+                at = fresh()
+                widget = at.get(kind)[i]
+                if kind == "multiselect":
+                    widget.set_value([widget.options[option]])
+                else:
+                    widget.set_value(widget.options[option])
+                at.run()
+                clean(at)
+                if not (at.metric or at.dataframe):
+                    raise RuntimeError("no metrics or tables rendered")
+            except Exception as exc:
+                failures.append(f"{label} option {option}: {str(exc)[:120]}")
+    return {"controls": len(controls), "options_tried": tried, "failures": failures}
 
 
 def chart_problems(at):
@@ -195,6 +234,7 @@ def inspect_page(page):
         result["chart_count"] = len(at.get("plotly_chart")) + len(at.get("arrow_vega_lite_chart"))
         if page == "pages/7_model.py":
             result["model"] = model_evidence(at)
+        result["R19"] = sweep_drills(page)
         for check, change, snapshot in (("R2", change_period, numeric_output), ("R3", change_drill, shown_output)):
             try:
                 # Restore default state: period and drill are independent experiments.
@@ -377,6 +417,9 @@ def run_checks(root=ROOT, *, run_tests=True, url=None):
     chart_details = [{"page": p["page"], **p.get("charts", {"problems": [p.get("error", "No chart inspection")]})} for p in pages]
     rows.append(row("R16", "fail" if any(p["problems"] for p in chart_details) else "manual", chart_details))
     rows.append(originality_check(root))
+    sweeps = [{"page": p["page"], **p.get("R19", {"failures": [p.get("error", "No sweep")]})} for p in pages]
+    rows.append(row("R19", "fail" if any(s["failures"] for s in sweeps) else "pass",
+                    {"pages": sweeps, "limitation": "Checks rendering of every drill option, not that its numbers are right."}))
     return sorted(rows, key=lambda r: int(r["id"][1:]))
 
 
