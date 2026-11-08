@@ -176,3 +176,14 @@ def test_deployment_check_diagnoses_auth_redirect(tmp_path, monkeypatch):
     result = rubric.deployment_check(tmp_path, "https://x.streamlit.app/")
     assert result["status"] == "fail"
     assert "not public" in result["details"]["diagnosis"]
+
+
+def test_fixed_day_check_flags_hard_coded_24_hour_day(tmp_path):
+    (tmp_path / "royale").mkdir()
+    (tmp_path / "pages").mkdir()
+    (tmp_path / "royale/ok.py").write_text("hours = scheduled_seconds / 3600  # not 24\nrange(0, 24, 3)\n")
+    assert rubric.fixed_day_check(tmp_path)["status"] == "pass"
+    (tmp_path / "pages/bad.py").write_text("hours = days * 24\n")
+    result = rubric.fixed_day_check(tmp_path)
+    assert result["status"] == "fail" and "pages/bad.py:1" in result["details"]["hard_coded_day_length"][0]
+    assert rubric.fixed_day_check(rubric.ROOT)["status"] == "pass"
