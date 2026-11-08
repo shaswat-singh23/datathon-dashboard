@@ -23,7 +23,7 @@ from urllib.request import HTTPRedirectHandler, build_opener, urlopen
 
 ROOT = Path(__file__).resolve().parents[1]
 WEIGHTS = dict(zip((f"R{i}" for i in range(1, 18)),
-                   (3, 3, 2, 2, 3, 3, 4, 3, 2, 2, 2, 3, 2, 2, 1, 2, 1)))
+                   (3, 3, 2, 2, 3, 3, 4, 3, 2, 2, 2, 3, 2, 2, 1, 2, 1)), R52=2)
 NESTED = "ROYALE_RUBRIC_NESTED"
 
 
@@ -367,6 +367,28 @@ def originality_check(root):
                {"candidates": candidates, "details": "Review whether the result is unexpected; marker plus reproduction heading alone is insufficient."})
 
 
+ACCUSE = re.compile(r"\b(fraud\w*|cheat\w*|theft|thief|stole\w*|steal\w*|rigged|tamper\w*|collu\w+|embezzl\w*|guilty|culprit)\b", re.I)
+INDUCE = re.compile(r"\b(play more|more play|encourage \w+ (to )?play|heavy[- ]loser\w*|chase (their )?loss\w*)\b", re.I)
+NEGATED = re.compile(r"\b(no|not|never|without|avoid\w*|don't|doesn't|did not)\b", re.I)
+
+
+def tone_check(root):
+    """R52 (AGENTS.md Challenge rules): payouts are leads, not accusations; no pushing heavy losers to play more.
+
+    Keyword proxy over shipped prose. Lines that negate the term (e.g. "did not label anyone as cheating") pass.
+    """
+    paths = [root / "README.md", root / "app.py", *sorted((root / "docs").glob("**/*.md")),
+             *sorted((root / "findings").glob("*.md")), *sorted((root / "pages").glob("*.py")),
+             *sorted((root / "royale").glob("**/*.py"))]
+    hits = []
+    for path in filter(Path.is_file, paths):
+        for number, line in enumerate(path.read_text(errors="ignore").splitlines(), 1):
+            if (ACCUSE.search(line) or INDUCE.search(line)) and not NEGATED.search(line):
+                hits.append(f"{path.relative_to(root)}:{number}")
+    return row("R52", "pass" if not hits else "fail",
+               {"flagged_lines": hits[:20], "limitation": "Keyword proxy; cannot judge tone beyond listed terms."})
+
+
 def run_checks(root=ROOT, *, run_tests=True, url=None):
     pages = page_checks(root)
     rows = [page_row("R1", pages, lambda p: ("pass" if p["seconds"] < 5 else "fail",
@@ -395,7 +417,7 @@ def run_checks(root=ROOT, *, run_tests=True, url=None):
         row("R10", "manual", "Audit money helpers, ratios of sums, dated placement joins and off-floor exclusions in every query; source mentions alone are insufficient."),
         row("R11", "manual", "Trace forecast feature provenance and availability dates, including indirect imports; banning words in model code would flag explanatory comments and miss leakage."),
         budget_check(root), deliverables_check(root), deployment_check(root, url),
-        mart_and_tests_check(root, run_tests),
+        mart_and_tests_check(root, run_tests), tone_check(root),
     ])
     chart_details = [{"page": p["page"], **p.get("charts", {"problems": [p.get("error", "No chart inspection")]})} for p in pages]
     rows.append(row("R16", "fail" if any(p["problems"] for p in chart_details) else "manual", chart_details))
