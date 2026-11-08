@@ -10,7 +10,7 @@ from royale.evidence import render_evidence
 from royale.filters import analysis_period, describe_period
 from royale.theme import apply_theme
 
-from royale import io
+from royale import io, visuals
 from royale.demand import event_comparison, traffic_summary
 
 st.set_page_config(page_title="Demand: The Gilded Ace", page_icon="♠", layout="wide")
@@ -122,6 +122,32 @@ st.caption(f"{traffic['covered_sensor_hours']:,.1f} usable covered sensor-hours 
            "positive coverage. Scheduled hours follow the gaming calendar, including DST. "
            "Crossings are not unique visitors. Normalization does not recover missed crossings or establish "
            "that offline hours had the same traffic; observed entries/day can change with coverage.")
+
+# ---- Back Forty closure comparison -------------------------------------------------------
+st.subheader("Back Forty vs rest of floor around the walkway closure")
+closure = visuals.closure_window(df)
+closure_table, closure_gap = visuals.closure_comparison(view, closure)
+if closure is not None:
+    st.caption(f"Actual closure: W-ENT-B40 (Main Entrance ↔ Back Forty), gaming days {closure[0]:%b %d}–"
+               f"{closure[1]:%b %d}, 2025. Bars use only the selected period ({start:%b %d}–{end:%b %d}); "
+               "this comparison always contrasts the Back Forty with all other zones, whatever the zone drill.")
+if closure_gap:
+    st.warning(closure_gap)
+if not closure_table.empty:
+    st.plotly_chart(visuals.closure_chart(closure_table), width="stretch")
+    st.dataframe(closure_table, hide_index=True, width="stretch", column_config={
+        "phase": "Phase", "area": "Area", "days": "Gaming days",
+        "coin_in_usd": st.column_config.NumberColumn("Coin-in ($)", format="$%,.0f"),
+        "available_hours": st.column_config.NumberColumn("Available machine-hours", format="%,.0f"),
+        "coin_in_per_available_hour": st.column_config.NumberColumn("Coin-in / available machine-hour ($/h)", format="$%.1f"),
+        "zone_entries": st.column_config.NumberColumn("Observed entries (covered hours)", format="%,.0f"),
+        "covered_sensor_hours": st.column_config.NumberColumn("Covered sensor-hours", format="%,.1f"),
+        "entries_per_covered_hour": st.column_config.NumberColumn("Entries / covered sensor-hour", format="%.1f"),
+    })
+st.caption("Observational association only: rates are ratios of sums over the phase's selected days. "
+           "Before/during/after differences can also reflect seasonality, events, bet-size mix or guests "
+           "moving to other zones; they do not identify a closure effect. Entries are sensor crossings, "
+           "not unique people, and exclude offline counter hours.")
 
 # ---- Trend -----------------------------------------------------------------------------
 st.subheader(f"Coin-in trend, {scope_name}")
