@@ -176,3 +176,12 @@ def test_deployment_check_diagnoses_auth_redirect(tmp_path, monkeypatch):
     result = rubric.deployment_check(tmp_path, "https://x.streamlit.app/")
     assert result["status"] == "fail"
     assert "not public" in result["details"]["diagnosis"]
+
+
+def test_finding_template_flags_missing_and_empty_fields():
+    good = ("# T\n- Issue: #1 | Author: a | Time: 10:00\n- Claim: c\n- Evidence: e\n"
+            "- So what: s\n- Checked by: unchecked\n")
+    assert rubric.finding_problems(good) == []
+    assert rubric.finding_problems(good.replace("- So what: s\n", "- So what:\n")) == ["So what"]
+    assert rubric.finding_problems(good.replace("# T\n", "")) == ["title"]
+    assert rubric.finding_problems(good.replace("- Evidence: e\n", "- Evidence:\n  - e\n")) == []

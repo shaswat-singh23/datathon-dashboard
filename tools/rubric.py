@@ -24,6 +24,7 @@ from urllib.request import HTTPRedirectHandler, build_opener, urlopen
 ROOT = Path(__file__).resolve().parents[1]
 WEIGHTS = dict(zip((f"R{i}" for i in range(1, 18)),
                    (3, 3, 2, 2, 3, 3, 4, 3, 2, 2, 2, 3, 2, 2, 1, 2, 1)))
+WEIGHTS["R39"] = 1
 NESTED = "ROYALE_RUBRIC_NESTED"
 
 
@@ -367,6 +368,28 @@ def originality_check(root):
                {"candidates": candidates, "details": "Review whether the result is unexpected; marker plus reproduction heading alone is insufficient."})
 
 
+FINDING_FIELDS = ("Issue", "Author", "Time", "Claim", "Evidence", "So what", "Checked by")
+
+
+def finding_problems(text):
+    """Missing template pieces (AGENTS.md "Findings") for one findings file."""
+    problems = [] if text.lstrip().startswith("# ") else ["title"]
+    for field in FINDING_FIELDS:
+        if not re.search(rf"^- (?:.*\| )?{field}:[ \t]*(?:\S|\n[ \t]+\S)", text, re.M):
+            problems.append(field)
+    return problems
+
+
+def findings_template_check(root):
+    bad = {}
+    for path in sorted((root / "findings").glob("[0-9]*.md")):
+        problems = finding_problems(path.read_text())
+        if problems:
+            bad[path.name] = problems
+    return row("R39", "fail" if bad else "pass", {"incomplete": bad,
+               "limitation": "Checks the template fields exist and are nonempty, not that claims are true."})
+
+
 def run_checks(root=ROOT, *, run_tests=True, url=None):
     pages = page_checks(root)
     rows = [page_row("R1", pages, lambda p: ("pass" if p["seconds"] < 5 else "fail",
@@ -400,6 +423,7 @@ def run_checks(root=ROOT, *, run_tests=True, url=None):
     chart_details = [{"page": p["page"], **p.get("charts", {"problems": [p.get("error", "No chart inspection")]})} for p in pages]
     rows.append(row("R16", "fail" if any(p["problems"] for p in chart_details) else "manual", chart_details))
     rows.append(originality_check(root))
+    rows.append(findings_template_check(root))
     return sorted(rows, key=lambda r: int(r["id"][1:]))
 
 
