@@ -68,15 +68,15 @@ month = st.selectbox("Concentration chart month", list(monthly.period_month))
 active = view[(view.period_month == month) & (view.tracked_coin_in_usd > 0)]
 fig = go.Figure()
 fig.add_trace(go.Scatter(x=[0, 1], y=[0, 1], name="Equal-share baseline", line=dict(dash="dash", color=PALETTE[4])))
-for label, values, color in [("Wagers", active.tracked_coin_in_usd, PALETTE[0]),
-                              ("Gross player losses", (-active.tracked_net_usd).clip(lower=0), ADVERSE)]:
+for label, values, color, dash in [("Wagers", active.tracked_coin_in_usd, PALETTE[0], "solid"),
+                              ("Gross player losses", (-active.tracked_net_usd).clip(lower=0), ADVERSE, "dot")]:
     ordered = np.sort(values.to_numpy())
     if len(ordered) and ordered.sum() > 0:
         cumulative = np.r_[0, ordered.cumsum() / ordered.sum()]
         # Sample exact cumulative points to keep the interactive chart small.
         positions = np.unique(np.linspace(0, len(ordered), min(201, len(ordered) + 1)).astype(int))
         fig.add_trace(go.Scatter(x=positions / len(ordered), y=cumulative[positions], name=label,
-                                mode="lines", line=dict(color=color)))
+                                mode="lines", line=dict(color=color, dash=dash)))
 fig.update_layout(xaxis_title="Cumulative share of active players, lowest to highest",
                   yaxis_title="Cumulative share of amount", height=350,
                   xaxis_tickformat=".0%", yaxis_tickformat=".0%")
