@@ -24,6 +24,7 @@ from urllib.request import HTTPRedirectHandler, build_opener, urlopen
 ROOT = Path(__file__).resolve().parents[1]
 WEIGHTS = dict(zip((f"R{i}" for i in range(1, 18)),
                    (3, 3, 2, 2, 3, 3, 4, 3, 2, 2, 2, 3, 2, 2, 1, 2, 1)))
+WEIGHTS["R45"] = 2
 NESTED = "ROYALE_RUBRIC_NESTED"
 
 
@@ -395,12 +396,38 @@ def run_checks(root=ROOT, *, run_tests=True, url=None):
         row("R10", "manual", "Audit money helpers, ratios of sums, dated placement joins and off-floor exclusions in every query; source mentions alone are insufficient."),
         row("R11", "manual", "Trace forecast feature provenance and availability dates, including indirect imports; banning words in model code would flag explanatory comments and miss leakage."),
         budget_check(root), deliverables_check(root), deployment_check(root, url),
-        mart_and_tests_check(root, run_tests),
+        mart_and_tests_check(root, run_tests), window_check(root),
     ])
     chart_details = [{"page": p["page"], **p.get("charts", {"problems": [p.get("error", "No chart inspection")]})} for p in pages]
     rows.append(row("R16", "fail" if any(p["problems"] for p in chart_details) else "manual", chart_details))
     rows.append(originality_check(root))
     return sorted(rows, key=lambda r: int(r["id"][1:]))
+
+
+def window_check(root, marts_dir=None):
+    """R45: mart dates stay in Jan 1 to Jun 30 2025; forecast trains Jan-Apr, tests May-Jun."""
+    import pandas as pd
+    lo, hi = pd.Timestamp("2025-01-01"), pd.Timestamp("2025-06-30")
+    problems = []
+    for path in sorted((marts_dir or root / "marts").glob("*.parquet")):
+        frame = pd.read_parquet(path)
+        for col in frame.columns:
+            if "date" in col.lower() or col in {"month", "day"}:
+                dates = pd.to_datetime(frame[col], errors="coerce").dropna()
+                if len(dates) and (dates.min() < lo or dates.max() > hi):
+                    problems.append(f"{path.name}.{col}: {dates.min().date()}..{dates.max().date()}")
+    forecast = (marts_dir or root / "marts") / "q7_forecast.parquet"
+    if forecast.exists():
+        f = pd.read_parquet(forecast)
+        expected = {"gaming_date": ("2025-05-01", "2025-06-30"),
+                    "training_start": ("2025-01-01", "2025-01-01"),
+                    "training_end": ("2025-04-30", "2025-04-30")}
+        for col, (a, b) in expected.items():
+            if col not in f.columns:
+                problems.append(f"q7_forecast missing {col}")
+            elif pd.to_datetime(f[col]).min() != pd.Timestamp(a) or pd.to_datetime(f[col]).max() != pd.Timestamp(b):
+                problems.append(f"q7_forecast.{col} is not {a}..{b}")
+    return row("R45", "fail" if problems else "pass", problems or "All mart dates in window; split Jan-Apr/May-Jun")
 
 
 def main():
