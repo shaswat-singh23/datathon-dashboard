@@ -5,7 +5,7 @@ import streamlit as st
 from royale import config, io
 from royale.evidence import render_evidence
 from royale.filters import analysis_period, bank_drill, describe_period, reset_button
-from royale.theme import apply_theme
+from royale.theme import apply_theme, casino_art, exact_usd, short_usd
 from royale.marts.q1_machines import summarize
 from royale.overview import (EVIDENCE_CARDS, checked_by, july_decision, period_totals, rank_stability,
                              select_machine_days)
@@ -51,6 +51,7 @@ with st.expander("How the fixed July plan is calculated"):
              "lead time) and checks the $100,000 limit, quantity limits and incompatibility groups. "
              "The historical filters further down never retarget or reprice this plan. "
              "Actions contains the downtime cost, alternatives and measurement plan.")
+casino_art()  # narrow screens only: the illustration follows the decision
 
 st.subheader("Evidence · Full January–June case")
 for column, card in zip(st.columns(3), EVIDENCE_CARDS):
@@ -90,9 +91,10 @@ else:
     st.caption(f"{scope}; {selected.machine_id.nunique()} machines and {len(selected):,} on-floor machine-days. "
                "Every historical KPI, chart and rank below uses this selection.")
     k1, k2, k3, k4 = st.columns(4)
-    k1.metric("Coin-in", f"${totals['coin_in']:,.0f}")
-    k2.metric("House win", f"${totals['house_win']:,.0f}",
-              f"${totals['house_win'] - totals['theo']:+,.0f} vs theo")
+    k1.metric("Coin-in", short_usd(totals["coin_in"]), help=exact_usd(totals["coin_in"]))
+    luck = totals["house_win"] - totals["theo"]
+    k2.metric("House win", short_usd(totals["house_win"]), f"{'+' if luck >= 0 else '-'}{short_usd(abs(luck))} vs theo",
+              help=f"{exact_usd(totals['house_win'])}. Versus theo: {'+' if luck >= 0 else '−'}${abs(luck):,.0f}.")
     k3.metric("Observed hold", "Undefined" if totals["hold"] is None else f"{totals['hold']:.2%}")
     k4.metric("Availability", "Undefined" if totals["availability"] is None else f"{totals['availability']:.2%}")
     if totals["available_hours"] > 0:
