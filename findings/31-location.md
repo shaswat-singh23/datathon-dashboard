@@ -49,6 +49,10 @@ Against the simple before-closure baseline, Back Forty demand falls **28.5%** an
 - Streamlit AppTest loads the default page (7/10), changes game to Royal Draw, drills a Back Forty bank, narrows to March–April (no three-month interval), selects March 8 alone (complete-month notice), and selects February alone without a closure phase. No exceptions. Pages read committed marts only.
 - `uv run pytest -q`: **45 passed**. `git diff --check` passes. Findings remain unchecked pending independent review.
 
+## Unexpected result
+
+Unexpected relative to the manager's bottom-10 baseline by raw total house win: seven of the nine picks with matched peers achieve at least 90% of their same-title local peers' coin-in per available hour. For those seven, local peer demand is 34.8% to 40.3% lower than same-title peers in other zones: weak demand is largely shared with the zone. The 90% threshold is part of the screen. M-1120 (83.6%) and M-5076 (88.5%) fall below it. If a location effect is real, replacing machines in place alone would not be expected to fix it; a measured location experiment is needed to find out. This is a descriptive association, not a causal estimate. Steps to reproduce are in the Reproduce section below.
+
 ## Reproduce
 
 Build the mart, run the suite, then run this from the repository root. It reproduces the result, baseline, joins/totals, traffic deduplication, closure comparison and default page check:
