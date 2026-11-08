@@ -176,3 +176,10 @@ def test_deployment_check_diagnoses_auth_redirect(tmp_path, monkeypatch):
     result = rubric.deployment_check(tmp_path, "https://x.streamlit.app/")
     assert result["status"] == "fail"
     assert "not public" in result["details"]["diagnosis"]
+
+
+def test_independent_plan_cost_matches_and_detects_drift():
+    ok = rubric.independent_plan_check(ROOT)
+    assert ok["status"] == "pass", ok["details"]
+    bad = rubric.independent_plan_check(ROOT, cost_fn=lambda catalog, plan: 1.0)
+    assert bad["status"] == "fail" and "independent cost" in bad["details"]["problems"][0]
