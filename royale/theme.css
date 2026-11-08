@@ -1,7 +1,7 @@
 <style>
 /* The Gilded Ace: espresso, ivory, brass and deep green. Gold marks navigation and emphasis.
    Serif (Georgia) for titles and key totals; the app's sans serif for controls, prose and tables.
-   Nothing here animates: the marquee lights are a static accent. */
+   Motion lives in one block at the end, only under prefers-reduced-motion: no-preference. */
 :root {
   --ga-espresso: #29241f; --ga-ivory: #f7f3eb; --ga-paper: #fffcf7; --ga-ink: #332d27;
   --ga-muted: #6a5f52; --ga-brass: #7f5d27; --ga-gold: #d3b67d; --ga-green: #1f3a32;
@@ -114,7 +114,75 @@ a:focus-visible, button:focus-visible, summary:focus-visible, [role="slider"]:fo
 input:focus-visible, [tabindex]:focus-visible { outline: 3px solid var(--ga-brass) !important; outline-offset: 2px; }
 [data-testid="stSidebar"] a:focus-visible, [data-testid="stSidebar"] button:focus-visible { outline-color: var(--ga-gold) !important; }
 
-@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; transition: none !important; } }
+/* ---- Motion ------------------------------------------------------------------------------- */
+/* Restrained and reduced-motion-safe. Every rule below needs the no-preference query; under
+   `reduce` nothing animates or transitions. Entrances use opacity and transform only (no layout
+   shift), finish within 400ms including stagger, and fill backwards only so hover transforms still
+   apply afterwards. Streamlit keeps DOM nodes across reruns, so a filter change does not replay
+   them; only elements that are genuinely new fade in. Focus outlines are never in a transition. */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes ga-rise { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: none; } }
+  @keyframes ga-fade { from { opacity: 0; } to { opacity: 1; } }
+  /* Marquee glow: a slow, low-contrast breath, far below any flash threshold. */
+  @keyframes ga-marquee { 0%, 100% { opacity: .72; } 50% { opacity: 1; } }
+  /* Brass sheen: one soft highlight crosses the crest in under a second, then rests. */
+  @keyframes ga-sheen { 0% { transform: translateX(-160%) skewX(-18deg); } 14%, 100% { transform: translateX(160%) skewX(-18deg); } }
+
+  /* Entrances: metric, decision and evidence cards, expanders and the masthead. */
+  .ga-masthead { animation: ga-fade .35s ease-out backwards; }
+  [data-testid="stMetric"],
+  [data-testid="stExpander"],
+  [data-testid="stColumn"] > [data-testid="stVerticalBlock"] > [data-testid="stLayoutWrapper"] > [data-testid="stVerticalBlock"] {
+    animation: ga-rise .28s cubic-bezier(.22, .68, .3, 1) backwards; }
+  /* Small stagger across a row of columns; the last card is fully visible by 400ms. */
+  [data-testid="stColumn"]:nth-child(2) [data-testid="stMetric"],
+  [data-testid="stColumn"]:nth-child(2) > [data-testid="stVerticalBlock"] > [data-testid="stLayoutWrapper"] > [data-testid="stVerticalBlock"] { animation-delay: .04s; }
+  [data-testid="stColumn"]:nth-child(3) [data-testid="stMetric"],
+  [data-testid="stColumn"]:nth-child(3) > [data-testid="stVerticalBlock"] > [data-testid="stLayoutWrapper"] > [data-testid="stVerticalBlock"] { animation-delay: .08s; }
+  [data-testid="stColumn"]:nth-child(4) [data-testid="stMetric"],
+  [data-testid="stColumn"]:nth-child(4) > [data-testid="stVerticalBlock"] > [data-testid="stLayoutWrapper"] > [data-testid="stVerticalBlock"] { animation-delay: .12s; }
+  [data-testid="stColumn"]:nth-child(n+5) [data-testid="stMetric"] { animation-delay: .16s; }
+
+  /* Hover: cards lift a little under a soft shadow. */
+  [data-testid="stMetric"],
+  [data-testid="stColumn"] > [data-testid="stVerticalBlock"] > [data-testid="stLayoutWrapper"] > [data-testid="stVerticalBlock"] {
+    transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease; }
+  [data-testid="stMetric"]:hover,
+  [data-testid="stColumn"] > [data-testid="stVerticalBlock"] > [data-testid="stLayoutWrapper"] > [data-testid="stVerticalBlock"]:hover {
+    transform: translateY(-2px); box-shadow: 0 10px 22px -14px #29241f66, 0 1px 3px #29241f14; }
+  [data-testid="stMetric"]:hover { border-top-color: var(--ga-brass); }
+  [data-testid="stColumn"] > [data-testid="stVerticalBlock"] > [data-testid="stLayoutWrapper"] > [data-testid="stVerticalBlock"]:hover { border-color: #c9b48f !important; }
+  [data-testid="stExpander"] details { transition: border-color .2s ease, box-shadow .2s ease; }
+  [data-testid="stExpander"] details:hover { border-color: #c9b48f; box-shadow: 0 6px 16px -14px #29241f66; }
+  [data-testid="stExpander"] summary, [data-testid="stExpander"] summary * { transition: color .18s ease, background-color .18s ease; }
+
+  /* Links and buttons: colour, underline and border ease in; outlines stay instant and crisp. */
+  [data-testid="stMain"] [data-testid="stPageLink"] { transition: transform .2s ease, border-color .18s ease, box-shadow .2s ease; }
+  [data-testid="stMain"] [data-testid="stPageLink"]:hover { transform: translateY(-1px); box-shadow: 0 8px 18px -14px #29241f66; }
+  [data-testid="stMain"] [data-testid="stPageLink"] p { transition: color .18s ease; }
+  [data-testid="stMain"] [data-testid="stPageLink"]:hover p { color: var(--ga-brass); }
+  [data-testid="stMarkdownContainer"] a { text-underline-offset: .14em; transition: color .18s ease, text-decoration-color .18s ease, text-underline-offset .18s ease; }
+  [data-testid="stMarkdownContainer"] a:hover { text-underline-offset: .22em; }
+  [data-testid="stSidebar"] [data-testid="stPageLink-NavLink"] { transition: background-color .18s ease, border-color .18s ease; }
+  [data-testid="stSidebar"] [data-testid="stPageLink-NavLink"] p { transition: color .18s ease; }
+  [data-testid^="stBaseButton"] { transition: color .18s ease, background-color .18s ease, border-color .18s ease, box-shadow .18s ease; }
+  [role="radiogroup"] > label, [data-testid="stCheckbox"] label { transition: color .15s ease; }
+  /* Streamlit's controls ship `transition: all`, which would ease the focus ring in and out.
+     Limit every focusable element to colour, surface and transform properties so outlines snap. */
+  a, button, summary, input, [role="slider"], [tabindex] {
+    transition-property: color, background-color, border-color, box-shadow, transform, opacity, text-decoration-color, text-underline-offset !important; }
+
+  /* Home masthead: the marquee bulbs breathe over six seconds; the crests catch a passing light. */
+  .ga-masthead--home::before { animation: ga-marquee 6s ease-in-out infinite; }
+  .ga-crest, .ga-mini-crest { position: relative; overflow: hidden; }
+  .ga-crest::after, .ga-mini-crest::after { content: ''; position: absolute; top: -20%; bottom: -20%; left: 30%; width: 40%;
+    background: linear-gradient(90deg, transparent, #fff3d81f 45%, #fff3d838 50%, #fff3d81f 55%, transparent); pointer-events: none;
+    animation: ga-sheen 9s ease-in-out infinite; }
+  .ga-mini-crest::after { animation-delay: 2.5s; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; animation: none !important; }
+}
 
 @media (max-width: 900px) {
   [data-testid="stMainBlockContainer"] { padding: 4rem 1.25rem 3rem; }
