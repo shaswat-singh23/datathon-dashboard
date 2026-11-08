@@ -54,4 +54,4 @@ GROUP BY machine_id ORDER BY house_win, machine_id LIMIT 10;
 - Build asserts row-count preservation and unique machine-date keys; placements at gaming-day start agree with machine_day location. Calendar hours correctly give March 8 23 hours.
 - Independent raw SQL reproduces the ordered manager list; summed house win and theo reconcile to active machine_day totals. Every machine's z reconciles to an independent variance formula.
 - Streamlit AppTest checks the default page and single-day bank drill. `uv run pytest -q`: 45 passed.
-- Review required: findings remain unchecked until another person reviews them.
+- Review status: see the `Checked by` line above (Alex, 2026-11-07 16:15, tool-assisted re-run). Checking is a re-run of the stated command and reconciliation, not a causal validation of replacement.
