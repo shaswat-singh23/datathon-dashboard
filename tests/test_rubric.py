@@ -165,3 +165,14 @@ def test_checker_cli_writes_complete_report_without_raw_data(tmp_path):
     # Every route must have actually been attempted, even if its app crashed.
     assert len(rows[0]["details"]) == 1 + len(list((ROOT / "pages").glob("*.py")))
     assert not any(p["details"] == "" for p in rows[0]["details"])
+
+
+def test_dead_link_fails_and_external_urls_are_ignored(tmp_path):
+    (tmp_path / "docs").mkdir()
+    (tmp_path / "findings").mkdir()
+    (tmp_path / "findings/a.md").write_text("x")
+    (tmp_path / "README.md").write_text("[ok](findings/a.md) [web](https://example.com/x.md) `docs/gone.md`")
+    result = rubric.dead_links_check(tmp_path)
+    assert result["status"] == "fail" and result["details"]["dead_references"] == ["README.md -> docs/gone.md"]
+    (tmp_path / "README.md").write_text("[ok](findings/a.md#top) [web](https://example.com/x.md)")
+    assert rubric.dead_links_check(tmp_path)["status"] == "pass"
