@@ -24,6 +24,7 @@ from urllib.request import HTTPRedirectHandler, build_opener, urlopen
 ROOT = Path(__file__).resolve().parents[1]
 WEIGHTS = dict(zip((f"R{i}" for i in range(1, 18)),
                    (3, 3, 2, 2, 3, 3, 4, 3, 2, 2, 2, 3, 2, 2, 1, 2, 1)))
+WEIGHTS["R29"] = 1
 NESTED = "ROYALE_RUBRIC_NESTED"
 
 
@@ -367,6 +368,20 @@ def originality_check(root):
                {"candidates": candidates, "details": "Review whether the result is unexpected; marker plus reproduction heading alone is insufficient."})
 
 
+def readme_links_check(root):
+    readme = root / "README.md"
+    text = readme.read_text() if readme.is_file() else ""
+    required = {"dashboard_url": r"https://[\w.-]+\.streamlit\.app",
+                "writeup": r"\]\((?:\./)?docs/writeup\.md",
+                "claims_evidence": r"\]\((?:\./)?docs/claims_evidence\.md",
+                "ai_disclosure": r"\]\((?:\./)?docs/ai_disclosure\.md"}
+    found = {k: bool(re.search(v, text)) for k, v in required.items()}
+    video = bool(re.search(r"video", text, re.I) and re.search(r"https?://\S*(youtu|vimeo|loom|drive\.google)", text, re.I))
+    return row("R29", "pass" if all(found.values()) else "fail",
+               {"linked": found, "video_link_present": video,
+                "note": "Video link is reported but not required: recording is human-only."})
+
+
 def run_checks(root=ROOT, *, run_tests=True, url=None):
     pages = page_checks(root)
     rows = [page_row("R1", pages, lambda p: ("pass" if p["seconds"] < 5 else "fail",
@@ -400,6 +415,7 @@ def run_checks(root=ROOT, *, run_tests=True, url=None):
     chart_details = [{"page": p["page"], **p.get("charts", {"problems": [p.get("error", "No chart inspection")]})} for p in pages]
     rows.append(row("R16", "fail" if any(p["problems"] for p in chart_details) else "manual", chart_details))
     rows.append(originality_check(root))
+    rows.append(readme_links_check(root))
     return sorted(rows, key=lambda r: int(r["id"][1:]))
 
 
