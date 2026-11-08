@@ -24,6 +24,7 @@ from urllib.request import HTTPRedirectHandler, build_opener, urlopen
 ROOT = Path(__file__).resolve().parents[1]
 WEIGHTS = dict(zip((f"R{i}" for i in range(1, 18)),
                    (3, 3, 2, 2, 3, 3, 4, 3, 2, 2, 2, 3, 2, 2, 1, 2, 1)))
+WEIGHTS["R50"] = 2
 NESTED = "ROYALE_RUBRIC_NESTED"
 
 
@@ -367,6 +368,35 @@ def originality_check(root):
                {"candidates": candidates, "details": "Review whether the result is unexpected; marker plus reproduction heading alone is insufficient."})
 
 
+def manager_baseline_check(root):
+    """R50: the manager's bottom ten, recomputed from the mart without summarize()."""
+    sys.path.insert(0, str(root))
+    import pandas as pd
+    try:
+        path = root / "marts/q1_machines.parquet"
+        if path not in committed_marts(root):
+            raise ValueError("Machine mart is not committed")
+        from royale.marts.q1_machines import summarize
+        df = pd.read_parquet(path)
+        totals = df.groupby("machine_id").house_win_cents.sum().reset_index()
+        independent = totals.sort_values(["house_win_cents", "machine_id"]).head(10).machine_id.tolist()
+        ranked = summarize(df)
+        reported = ranked[ranked.raw_rank <= 10].index.tolist()
+        details = {"independent": independent, "summarize": sorted(reported),
+                   "machines": int(len(totals)), "details": "Bottom 10 by raw total house win over active on-floor days."}
+        problems = []
+        if "location_id" in df and df.location_id.isna().any():
+            problems.append("off-floor rows present in mart")
+        if df.duplicated(["machine_id", "gaming_date"]).any():
+            problems.append("duplicate machine-day rows")
+        if sorted(independent) != sorted(reported):
+            problems.append("summarize() raw_rank disagrees with independent bottom ten")
+        details["problems"] = problems
+        return row("R50", "fail" if problems else "pass", details)
+    except Exception as exc:
+        return row("R50", "fail", str(exc))
+
+
 def run_checks(root=ROOT, *, run_tests=True, url=None):
     pages = page_checks(root)
     rows = [page_row("R1", pages, lambda p: ("pass" if p["seconds"] < 5 else "fail",
@@ -400,6 +430,7 @@ def run_checks(root=ROOT, *, run_tests=True, url=None):
     chart_details = [{"page": p["page"], **p.get("charts", {"problems": [p.get("error", "No chart inspection")]})} for p in pages]
     rows.append(row("R16", "fail" if any(p["problems"] for p in chart_details) else "manual", chart_details))
     rows.append(originality_check(root))
+    rows.append(manager_baseline_check(root))
     return sorted(rows, key=lambda r: int(r["id"][1:]))
 
 

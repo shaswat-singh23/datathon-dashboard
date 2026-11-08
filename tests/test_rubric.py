@@ -176,3 +176,14 @@ def test_deployment_check_diagnoses_auth_redirect(tmp_path, monkeypatch):
     result = rubric.deployment_check(tmp_path, "https://x.streamlit.app/")
     assert result["status"] == "fail"
     assert "not public" in result["details"]["diagnosis"]
+
+
+def test_manager_baseline_matches_independent_bottom_ten():
+    result = rubric.manager_baseline_check(ROOT)
+    assert result["id"] == "R50" and result["status"] == "pass", result["details"]
+    assert len(result["details"]["independent"]) == 10
+
+
+def test_manager_baseline_fails_when_mart_missing(tmp_path):
+    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+    assert rubric.manager_baseline_check(tmp_path)["status"] == "fail"
