@@ -165,3 +165,13 @@ def test_checker_cli_writes_complete_report_without_raw_data(tmp_path):
     # Every route must have actually been attempted, even if its app crashed.
     assert len(rows[0]["details"]) == 1 + len(list((ROOT / "pages").glob("*.py")))
     assert not any(p["details"] == "" for p in rows[0]["details"])
+
+
+def test_accusation_scan_flags_plain_accusation_but_not_negated_lead(tmp_path):
+    (tmp_path / "docs").mkdir()
+    (tmp_path / "docs/a.md").write_text("Machine 12 was rigged by staff.\nThis is not evidence of fraud.\n")
+    result = rubric.accusation_check(tmp_path)
+    assert result["status"] == "fail"
+    assert [h["line"] for h in result["details"]["hits"]] == [1]
+    (tmp_path / "docs/a.md").write_text("An unusual payout is a lead to inspect, not evidence of fraud.\n")
+    assert rubric.accusation_check(tmp_path)["status"] == "pass"
