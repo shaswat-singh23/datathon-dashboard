@@ -22,8 +22,8 @@ from urllib.error import URLError
 from urllib.request import urlopen
 
 ROOT = Path(__file__).resolve().parents[1]
-WEIGHTS = dict(zip((f"R{i}" for i in range(1, 18)),
-                   (3, 3, 2, 2, 3, 3, 4, 3, 2, 2, 2, 3, 2, 2, 1, 2, 1)))
+WEIGHTS = {**dict(zip((f"R{i}" for i in range(1, 18)),
+                      (3, 3, 2, 2, 3, 3, 4, 3, 2, 2, 2, 3, 2, 2, 1, 2, 1))), "R22": 2}
 NESTED = "ROYALE_RUBRIC_NESTED"
 
 
@@ -336,6 +336,29 @@ def budget_check(root):
         return row("R12", "fail", str(exc))
 
 
+def raw_access_check(root):
+    """R22: pages read only committed marts (AST scan for raw-data access)."""
+    import ast
+    problems = []
+    for path in [root / "app.py", *sorted((root / "pages").glob("*.py"))]:
+        if not path.exists():
+            continue
+        for node in ast.walk(ast.parse(path.read_text())):
+            name = None
+            if isinstance(node, ast.Attribute) and node.attr in {"table", "sql", "DATA_DIR"}:
+                base = node.value.id if isinstance(node.value, ast.Name) else ""
+                if base in {"io", "config", "os"} or node.attr != "table":
+                    name = f"{base}.{node.attr}"
+            elif isinstance(node, ast.Name) and node.id == "DATA_DIR":
+                name = "DATA_DIR"
+            elif isinstance(node, ast.Constant) and isinstance(node.value, str) and "dashboard-royale" in node.value:
+                name = "dashboard-royale path"
+            if name:
+                problems.append(f"{path.relative_to(root)}:{node.lineno} {name}")
+    return row("R22", "fail" if problems else "pass",
+               {"raw_access": problems, "limitation": "Static scan of pages; helpers imported from royale/ are not followed."})
+
+
 def originality_check(root):
     findings = [p for p in (root / "findings").glob("*.md") if p.name != "README.md"]
     candidates = [p.name for p in findings if re.search(r"\bunexpected\b", p.read_text(), re.I)
@@ -377,6 +400,7 @@ def run_checks(root=ROOT, *, run_tests=True, url=None):
     chart_details = [{"page": p["page"], **p.get("charts", {"problems": [p.get("error", "No chart inspection")]})} for p in pages]
     rows.append(row("R16", "fail" if any(p["problems"] for p in chart_details) else "manual", chart_details))
     rows.append(originality_check(root))
+    rows.append(raw_access_check(root))
     return sorted(rows, key=lambda r: int(r["id"][1:]))
 
 

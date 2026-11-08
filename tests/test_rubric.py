@@ -165,3 +165,17 @@ def test_checker_cli_writes_complete_report_without_raw_data(tmp_path):
     # Every route must have actually been attempted, even if its app crashed.
     assert len(rows[0]["details"]) == 1 + len(list((ROOT / "pages").glob("*.py")))
     assert not any(p["details"] == "" for p in rows[0]["details"])
+
+
+def test_r22_flags_raw_access_in_pages(tmp_path):
+    (tmp_path / "pages").mkdir()
+    (tmp_path / "app.py").write_text("from royale import io\nio.mart('q1_machines')\n")
+    (tmp_path / "pages/1_x.py").write_text("from royale import io\nio.mart('a')\n")
+    assert rubric.raw_access_check(tmp_path)["status"] == "pass"
+    (tmp_path / "pages/2_bad.py").write_text("from royale import io\nio.sql('select 1')\nio.table('t')\n")
+    result = rubric.raw_access_check(tmp_path)
+    assert result["status"] == "fail" and len(result["details"]["raw_access"]) == 2
+
+
+def test_r22_passes_on_repo():
+    assert rubric.raw_access_check(ROOT)["status"] == "pass"
