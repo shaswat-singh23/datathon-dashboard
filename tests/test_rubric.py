@@ -176,3 +176,15 @@ def test_deployment_check_diagnoses_auth_redirect(tmp_path, monkeypatch):
     result = rubric.deployment_check(tmp_path, "https://x.streamlit.app/")
     assert result["status"] == "fail"
     assert "not public" in result["details"]["diagnosis"]
+
+
+def test_baseline_check_flags_finding_without_comparison(tmp_path):
+    (tmp_path / "findings").mkdir()
+    (tmp_path / "findings/1-a.md").write_text("- Claim: X is 5.\n- Evidence: 5 from query\n- So what: big\n")
+    (tmp_path / "findings/2-b.md").write_text("- Claim: X is 5.\n- Evidence: MAE 3 vs constant-mean baseline 7\n")
+    (tmp_path / "findings/README.md").write_text("index")
+    result = rubric.baseline_check(tmp_path)
+    assert result["status"] == "fail"
+    assert result["details"]["findings_without_baseline"] == ["1-a.md"]
+    (tmp_path / "findings/1-a.md").write_text("- Claim: X is 5.\n- Baseline: manager's list gives 3\n")
+    assert rubric.baseline_check(tmp_path)["status"] == "pass"

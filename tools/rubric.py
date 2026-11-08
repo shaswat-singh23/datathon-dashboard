@@ -24,6 +24,7 @@ from urllib.request import HTTPRedirectHandler, build_opener, urlopen
 ROOT = Path(__file__).resolve().parents[1]
 WEIGHTS = dict(zip((f"R{i}" for i in range(1, 18)),
                    (3, 3, 2, 2, 3, 3, 4, 3, 2, 2, 2, 3, 2, 2, 1, 2, 1)))
+WEIGHTS["R35"] = 2
 NESTED = "ROYALE_RUBRIC_NESTED"
 
 
@@ -367,6 +368,26 @@ def originality_check(root):
                {"candidates": candidates, "details": "Review whether the result is unexpected; marker plus reproduction heading alone is insufficient."})
 
 
+BASELINE_TERMS = re.compile(r"baseline|naive|constant[- ]mean|manager|"
+                            r"permutation|random|null model|rule of thumb|peers?\b|compared (?:with|to)|"
+                            r"\bvs\.?\b|versus", re.I)
+
+
+def baseline_check(root):
+    """AGENTS.md Rule 2: no baseline, no claim. Each finding must name what it is compared against."""
+    missing = []
+    for path in sorted((root / "findings").glob("*.md")):
+        if path.name == "README.md":
+            continue
+        lines = [l for l in path.read_text().splitlines()
+                 if re.match(r"- (Claim|Evidence|So what|Baseline):", l)]
+        if not BASELINE_TERMS.search(" ".join(lines)):
+            missing.append(path.name)
+    return row("R35", "pass" if not missing else "fail",
+               {"findings_without_baseline": missing,
+                "limitation": "Keyword screen on Claim/Evidence/So what/Baseline lines: shows a comparison is named, not that it is the right one. Add a '- Baseline:' line (or 'n/a, no comparative claim' with reason) to a finding."})
+
+
 def run_checks(root=ROOT, *, run_tests=True, url=None):
     pages = page_checks(root)
     rows = [page_row("R1", pages, lambda p: ("pass" if p["seconds"] < 5 else "fail",
@@ -400,6 +421,7 @@ def run_checks(root=ROOT, *, run_tests=True, url=None):
     chart_details = [{"page": p["page"], **p.get("charts", {"problems": [p.get("error", "No chart inspection")]})} for p in pages]
     rows.append(row("R16", "fail" if any(p["problems"] for p in chart_details) else "manual", chart_details))
     rows.append(originality_check(root))
+    rows.append(baseline_check(root))
     return sorted(rows, key=lambda r: int(r["id"][1:]))
 
 
