@@ -23,7 +23,7 @@ from urllib.request import HTTPRedirectHandler, build_opener, urlopen
 
 ROOT = Path(__file__).resolve().parents[1]
 WEIGHTS = dict(zip((f"R{i}" for i in range(1, 18)),
-                   (3, 3, 2, 2, 3, 3, 4, 3, 2, 2, 2, 3, 2, 2, 1, 2, 1)))
+                   (3, 3, 2, 2, 3, 3, 4, 3, 2, 2, 2, 3, 2, 2, 1, 2, 1)), R34=2)
 NESTED = "ROYALE_RUBRIC_NESTED"
 
 
@@ -367,6 +367,23 @@ def originality_check(root):
                {"candidates": candidates, "details": "Review whether the result is unexpected; marker plus reproduction heading alone is insufficient."})
 
 
+SECRET = re.compile(r"sk-ant-[A-Za-z0-9_-]{20,}|sk-[A-Za-z0-9]{32,}|AIza[0-9A-Za-z_-]{35}|gh[pousr]_[A-Za-z0-9]{36,}"
+                    r"|AKIA[0-9A-Z]{16}|-----BEGIN [A-Z ]*PRIVATE KEY-----")
+
+
+def secrets_check(root):
+    """R34 (AGENTS.md rule 7): no tracked .env or key-shaped strings; .env is gitignored."""
+    listed = subprocess.run(["git", "ls-files"], cwd=root, capture_output=True, text=True)
+    if listed.returncode:
+        return row("R34", "fail", "git ls-files failed: " + listed.stderr.strip()[:200])
+    tracked = [f for f in listed.stdout.splitlines() if (root / f).is_file()]
+    envs = [f for f in tracked if Path(f).name.startswith(".env") and Path(f).name != ".env.example"]
+    ignored = subprocess.run(["git", "check-ignore", "-q", ".env"], cwd=root).returncode == 0
+    hits = [f for f in tracked if SECRET.search((root / f).read_text(errors="ignore"))]
+    return row("R34", "pass" if ignored and not envs and not hits else "fail",
+               {"env_files_tracked": envs, "env_gitignored": ignored, "files_with_key_patterns": hits})
+
+
 def run_checks(root=ROOT, *, run_tests=True, url=None):
     pages = page_checks(root)
     rows = [page_row("R1", pages, lambda p: ("pass" if p["seconds"] < 5 else "fail",
@@ -395,7 +412,7 @@ def run_checks(root=ROOT, *, run_tests=True, url=None):
         row("R10", "manual", "Audit money helpers, ratios of sums, dated placement joins and off-floor exclusions in every query; source mentions alone are insufficient."),
         row("R11", "manual", "Trace forecast feature provenance and availability dates, including indirect imports; banning words in model code would flag explanatory comments and miss leakage."),
         budget_check(root), deliverables_check(root), deployment_check(root, url),
-        mart_and_tests_check(root, run_tests),
+        mart_and_tests_check(root, run_tests), secrets_check(root),
     ])
     chart_details = [{"page": p["page"], **p.get("charts", {"problems": [p.get("error", "No chart inspection")]})} for p in pages]
     rows.append(row("R16", "fail" if any(p["problems"] for p in chart_details) else "manual", chart_details))
