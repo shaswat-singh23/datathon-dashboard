@@ -24,6 +24,7 @@ from urllib.request import HTTPRedirectHandler, build_opener, urlopen
 ROOT = Path(__file__).resolve().parents[1]
 WEIGHTS = dict(zip((f"R{i}" for i in range(1, 18)),
                    (3, 3, 2, 2, 3, 3, 4, 3, 2, 2, 2, 3, 2, 2, 1, 2, 1)))
+WEIGHTS["R32"] = 2  # accessibility: series not told apart by color alone
 NESTED = "ROYALE_RUBRIC_NESTED"
 
 
@@ -104,13 +105,31 @@ def change_drill(at):
     raise RuntimeError("Drill controls have no alternative selection")
 
 
+def color_only_series(spec):
+    """Names of same-type series a reader could tell apart only by color."""
+    groups = {}
+    for trace in spec.get("data", []):
+        kind = trace.get("type", "scatter")
+        if kind not in {"scatter", "bar"}:
+            continue
+        marker, line = trace.get("marker") or {}, trace.get("line") or {}
+        if trace.get("text") or trace.get("texttemplate"):
+            continue  # direct labels carry the identity
+        key = (kind, line.get("dash"), marker.get("symbol"), json.dumps(marker.get("pattern"), sort_keys=True),
+               trace.get("fill"), trace.get("mode"))
+        groups.setdefault(key, []).append(trace.get("name") or "(unnamed)")
+    return [names for names in groups.values() if len(names) > 1]
+
+
 def chart_problems(at):
     """Only explicit defects are automated; color independence still needs review."""
     problems = []
+    color_only = []
     count = 0
     for element in at.get("plotly_chart"):
         count += 1
         spec = json.loads(element.proto.spec)
+        color_only += [{"chart": count, "series": names} for names in color_only_series(spec)]
         layout = spec.get("layout", {})
         def title(value):
             return value.get("text", "") if isinstance(value, dict) else value
@@ -122,7 +141,7 @@ def chart_problems(at):
             for axis in ("xaxis", "yaxis"):
                 if not title(layout.get(axis, {}).get("title")):
                     problems.append(f"Plotly chart {count}: missing {axis} label")
-    return {"count": count, "problems": problems,
+    return {"count": count, "problems": problems, "color_only": color_only,
             "manual": "Review native charts, all interactive states, and non-color encodings."}
 
 
@@ -399,6 +418,8 @@ def run_checks(root=ROOT, *, run_tests=True, url=None):
     ])
     chart_details = [{"page": p["page"], **p.get("charts", {"problems": [p.get("error", "No chart inspection")]})} for p in pages]
     rows.append(row("R16", "fail" if any(p["problems"] for p in chart_details) else "manual", chart_details))
+    color_only = [{"page": p["page"], "groups": p["color_only"]} for p in chart_details if p.get("color_only")]
+    rows.append(row("R32", "fail" if color_only else "pass", color_only or "No same-type series differ by color alone."))
     rows.append(originality_check(root))
     return sorted(rows, key=lambda r: int(r["id"][1:]))
 
