@@ -199,10 +199,10 @@ else:
     game_data = locations[locations.game == game]
     zone_rates = location.rates(game_data, ['month', 'zone_id', 'zone_name'])
     zone_rates['month_label'] = pd.to_datetime(zone_rates.month).dt.strftime('%Y-%m')
-    st.plotly_chart(px.line(zone_rates, x='month_label', y='coin_in_per_available_hour',
+    st.plotly_chart(visuals.label(px.line(zone_rates, x='month_label', y='coin_in_per_available_hour',
                            color='zone_name', markers=True,
                            labels={'month_label': 'Month', 'coin_in_per_available_hour': 'Coin-in / available hour ($)',
-                                   'zone_name': 'Zone'}), width='stretch')
+                                   'zone_name': 'Zone'}), f'{game}: coin-in per available hour by zone', 'Month'), width='stretch')
     st.caption('Each line is the selected title in one zone; compare within a month to hold title '
                'and calendar month fixed. Empty combinations have no matched evidence.')
     bank_rates = location.rates(game_data, ['zone_name', 'bank_id'])

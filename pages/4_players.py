@@ -6,6 +6,7 @@ import streamlit as st
 
 from royale.evidence import render_evidence
 from royale.filters import independent_scope_note
+from royale import visuals
 from royale.theme import ADVERSE, PALETTE, apply_theme
 
 from royale import io
@@ -80,7 +81,7 @@ for label, values, color, dash in [("Wagers", active.tracked_coin_in_usd, PALETT
 fig.update_layout(xaxis_title="Cumulative share of active players, lowest to highest",
                   yaxis_title="Cumulative share of amount", height=350,
                   xaxis_tickformat=".0%", yaxis_tickformat=".0%")
-st.plotly_chart(fig, width="stretch")
+st.plotly_chart(visuals.label(fig, "Concentration of wagers and player losses"), width="stretch")
 
 st.subheader("Guest-group comparison")
 dimension = st.selectbox("Compare groups by", ["home_region", "age_band", "opening_tier"])
