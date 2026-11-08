@@ -306,7 +306,7 @@ else:
         cf.add_scatter(x=context["gaming_date"], y=context["coin_in_usd"], name="Whole-floor coin-in",
                        line=dict(color=PRIMARY), hovertemplate="$%{y:,.0f}")
         cf.add_scatter(x=context["gaming_date"], y=context[metric], name=metric,
-                       yaxis="y2", line=dict(color=COMPARE), connectgaps=False)
+                       yaxis="y2", line=dict(color=COMPARE, dash="dot"), connectgaps=False)
         cf = style(cf, 340)
         cf.update_layout(yaxis=dict(title="Coin-in ($)"),
                          yaxis2=dict(title={"tmax_c": "Temperature (°C)", "prcp_mm": "Rain (mm)",

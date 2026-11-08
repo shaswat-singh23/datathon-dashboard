@@ -176,6 +176,7 @@ else:
         labels = [SHIFT_LABEL[s] for s in sh.index]
         f4 = go.Figure()
         f4.add_bar(x=labels, y=sh["wait"], name="Wait for tech", marker_color=COMPARE, marker_line_width=0,
+                   marker_pattern_shape="/",
                    customdata=sh["n"], hovertemplate="%{x}: wait %{y:.2f} h (n=%{customdata:,})<extra></extra>")
         f4.add_bar(x=labels, y=sh["fix"], name="Fix", marker_color=PRIMARY, marker_line_width=0,
                    customdata=sh["n"], hovertemplate="%{x}: fix %{y:.2f} h (n=%{customdata:,})<extra></extra>")
