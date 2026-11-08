@@ -176,3 +176,19 @@ def test_deployment_check_diagnoses_auth_redirect(tmp_path, monkeypatch):
     result = rubric.deployment_check(tmp_path, "https://x.streamlit.app/")
     assert result["status"] == "fail"
     assert "not public" in result["details"]["diagnosis"]
+
+
+def test_baseline_recompute_passes_on_repo_and_fails_when_mart_perturbed(tmp_path):
+    spec = importlib.util.spec_from_file_location("rubric_r49", Path(__file__).parents[1] / "tools/rubric.py")
+    rubric = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(rubric)
+    root = Path(__file__).parents[1]
+    assert rubric.baseline_check(root)["status"] == "pass"
+    (tmp_path / "marts").mkdir()
+    (tmp_path / "findings").mkdir()
+    (tmp_path / "findings/47-forecast-evaluation.md").write_text((root / "findings/47-forecast-evaluation.md").read_text())
+    (tmp_path / "marts/property_day.parquet").write_bytes((root / "marts/property_day.parquet").read_bytes())
+    fc = pd.read_parquet(root / "marts/q7_forecast.parquet")
+    fc["constant_prediction_usd"] += 1000
+    fc.to_parquet(tmp_path / "marts/q7_forecast.parquet")
+    assert rubric.baseline_check(tmp_path)["status"] == "fail"
