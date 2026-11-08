@@ -3,6 +3,7 @@ import pandas as pd
 import streamlit as st
 
 from royale.evidence import render_evidence
+from royale.theme import apply_theme
 
 from royale import budget, config, io
 from royale.marts.q6_actions import assess, proposed_plan
@@ -11,6 +12,7 @@ REPO = "https://github.com/shaswat-singh23/datathon-dashboard/blob/master/"
 FINDING = REPO + "findings/23-july-actions.md"
 
 st.set_page_config(page_title="Actions: The Gilded Ace", page_icon="♠", layout="wide")
+apply_theme("July investment plan")
 st.title("Inspect before replacing; preserve the remaining budget")
 st.caption("July 1–30, 2025 · A small information purchase, with maintenance and staffing alternatives priced alongside it.")
 try:

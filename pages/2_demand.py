@@ -7,17 +7,19 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from royale.evidence import render_evidence
+from royale.theme import apply_theme
 
 from royale import io
 from royale.demand import event_comparison, traffic_summary
 
 st.set_page_config(page_title="Demand: The Gilded Ace", page_icon="♠", layout="wide")
+apply_theme("Floor demand")
 
-BLUE = "#2a78d6"      # series 1: the selected zone / the floor
-ORANGE = "#eb6834"    # series 2: comparison (rest of floor)
+BLUE = "#35665D"      # series 1: the selected zone / the floor
+ORANGE = "#A47734"    # series 2: comparison (rest of floor)
 EVENT_FILL = "rgba(82, 81, 78, 0.12)"
-CLOSURE_FILL = "rgba(235, 104, 52, 0.14)"
-SEQ_SCALE = [[0, "#eef4fc"], [1, "#16447d"]]  # one hue, light to dark
+CLOSURE_FILL = "rgba(164, 119, 52, 0.14)"
+SEQ_SCALE = [[0, "#F3EDDF"], [1, "#35665D"]]  # one hue, light to dark
 
 
 def ratio(num: pd.Series, den: pd.Series) -> float:

@@ -4,11 +4,13 @@ import streamlit as st
 
 from royale import budget, config, io
 from royale.evidence import render_evidence
+from royale.theme import apply_theme
 from royale.marts.q1_machines import summarize
 from royale.marts.q6_actions import proposed_plan
 from royale.overview import period_totals, rank_stability, select_machine_days
 
 st.set_page_config(page_title="The Gilded Ace: Luck, Location, or a Leak?", page_icon="♠", layout="wide")
+apply_theme("Executive overview")
 st.title("Should we replace the ten lowest-earning machines?")
 st.caption("The Gilded Ace · January–June 2025 · Fictional casino, synthetic data.")
 

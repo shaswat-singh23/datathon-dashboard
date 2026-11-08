@@ -8,13 +8,15 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from royale.evidence import render_evidence
+from royale.theme import apply_theme
 
 from royale import io
 
 st.set_page_config(page_title="Downtime: The Gilded Ace", page_icon="♠", layout="wide")
+apply_theme("Availability & downtime")
 
-BLUE = "#2a78d6"    # series 1
-ORANGE = "#eb6834"  # series 2 (only where a second part is needed)
+BLUE = "#35665D"    # series 1
+ORANGE = "#A47734"  # series 2 (only where a second part is needed)
 SHIFTS = ["day", "swing", "grave"]
 SHIFT_LABEL = {"day": "Day (06-14)", "swing": "Swing (14-22)", "grave": "Grave (22-06)"}
 

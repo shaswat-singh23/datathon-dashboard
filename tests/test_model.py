@@ -103,7 +103,8 @@ def test_page_rescores_period_and_drills_without_refitting(monkeypatch):
 
     monkeypatch.setattr('royale.model.fit', no_fit)
     data = io.mart('q7_forecast')
-    app = AppTest.from_file(str(Path('pages/7_model.py').resolve()), default_timeout=30).run()
+    app = AppTest.from_file(str(Path('app.py').resolve()), default_timeout=30).run()
+    app.switch_page('pages/7_model.py').run()
     assert not app.exception
     initial = app.dataframe[0].value.copy()
     assert initial.Model.tolist() == [LABELS[kind] for kind in KINDS]

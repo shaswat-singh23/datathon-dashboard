@@ -6,6 +6,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from royale.evidence import render_evidence
+from royale.theme import apply_theme
 
 from royale import io
 from royale.model import FITTED_KIND, KINDS, LABELS, score_forecasts
@@ -13,6 +14,7 @@ from royale.overview import weekday_profile
 from royale.planning import evaluate_planning
 
 st.set_page_config(page_title='Coin-in forecast: The Gilded Ace', page_icon='♠', layout='wide')
+apply_theme("Forecast & validation")
 st.title('Can the calendar improve a daily demand forecast?')
 st.caption('Daily whole-floor coin-in in a fictional casino. Coin-in includes replayed winnings; it is not revenue or visitor spending.')
 try:
@@ -65,7 +67,7 @@ st.info('Decision: use the weekday profile to nominate busy days for operational
 
 selected = st.multiselect('Forecasts to compare', list(KINDS), default=list(KINDS), format_func=LABELS.get)
 fig = go.Figure(go.Scatter(x=view.gaming_date, y=view.coin_in_usd, name='Actual coin-in', line=dict(color='#222222')))
-for kind, color in zip(KINDS, ['#777777', '#2a78d6', '#eb6834']):
+for kind, color in zip(KINDS, ['#777777', '#35665D', '#A47734']):
     if kind in selected:
         fig.add_trace(go.Scatter(x=view.gaming_date, y=view[f'{kind}_prediction_usd'], name=LABELS[kind], line=dict(color=color)))
 fig.update_layout(height=380, yaxis_title='Daily coin-in (USD)', hovermode='x unified', yaxis_tickformat='$,.0f')
