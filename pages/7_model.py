@@ -6,6 +6,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from royale.evidence import render_evidence
+from royale.filters import independent_scope_note
 from royale.theme import apply_theme
 
 from royale import io
@@ -33,6 +34,7 @@ st.markdown('**Constant baseline:** the mean daily coin-in during training. **We
             '**Fitted regression (weekday + linear trend):** seven weekday intercepts and one shared linear time slope, fitted by least squares. '
             'Negative predictions are clipped to zero. These specifications are fixed; no hyperparameters are selected using the test period.')
 
+st.caption(independent_scope_note('May–June evaluation scope: the frozen forecasts are scored only on the May 1–June 30 holdout'))
 start, end = st.slider('Evaluation period', min_value=data.gaming_date.min().date(), max_value=data.gaming_date.max().date(),
                        value=(data.gaming_date.min().date(), data.gaming_date.max().date()))
 view = data[data.gaming_date.dt.date.between(start, end)]
