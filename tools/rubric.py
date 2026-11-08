@@ -24,6 +24,7 @@ from urllib.request import HTTPRedirectHandler, build_opener, urlopen
 ROOT = Path(__file__).resolve().parents[1]
 WEIGHTS = dict(zip((f"R{i}" for i in range(1, 18)),
                    (3, 3, 2, 2, 3, 3, 4, 3, 2, 2, 2, 3, 2, 2, 1, 2, 1)))
+WEIGHTS["R38"] = 2
 NESTED = "ROYALE_RUBRIC_NESTED"
 
 
@@ -359,6 +360,20 @@ def budget_check(root):
         return row("R12", "fail", str(exc))
 
 
+DATA_SUFFIXES = {".parquet", ".csv", ".tsv", ".xlsx", ".feather", ".duckdb", ".db", ".zip"}
+
+
+def raw_data_check(root, tracked=None):
+    """R38: raw data never enters the repo; only marts/ may hold data files."""
+    if tracked is None:
+        tracked = subprocess.run(["git", "ls-files"], cwd=root, capture_output=True, text=True,
+                                 check=True).stdout.splitlines()
+    bad = [n for n in tracked
+           if n.startswith(("dashboard-royale/", "data/"))
+           or (Path(n).suffix.lower() in DATA_SUFFIXES and not n.startswith("marts/"))]
+    return row("R38", "fail" if bad else "pass", {"tracked_files": len(tracked), "violations": bad[:20]})
+
+
 def originality_check(root):
     findings = [p for p in (root / "findings").glob("*.md") if p.name != "README.md"]
     candidates = [p.name for p in findings if re.search(r"\bunexpected\b", p.read_text(), re.I)
@@ -400,6 +415,7 @@ def run_checks(root=ROOT, *, run_tests=True, url=None):
     chart_details = [{"page": p["page"], **p.get("charts", {"problems": [p.get("error", "No chart inspection")]})} for p in pages]
     rows.append(row("R16", "fail" if any(p["problems"] for p in chart_details) else "manual", chart_details))
     rows.append(originality_check(root))
+    rows.append(raw_data_check(root))
     return sorted(rows, key=lambda r: int(r["id"][1:]))
 
 

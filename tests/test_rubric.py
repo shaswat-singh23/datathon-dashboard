@@ -176,3 +176,9 @@ def test_deployment_check_diagnoses_auth_redirect(tmp_path, monkeypatch):
     result = rubric.deployment_check(tmp_path, "https://x.streamlit.app/")
     assert result["status"] == "fail"
     assert "not public" in result["details"]["diagnosis"]
+
+
+def test_raw_data_outside_marts_fails():
+    assert rubric.raw_data_check(ROOT, ["marts/a.parquet", "app.py"])["status"] == "pass"
+    for name in ("raw/x.csv", "dashboard-royale/GUIDE.md", "data/rubric.json", "q.parquet"):
+        assert rubric.raw_data_check(ROOT, ["app.py", name])["status"] == "fail"
