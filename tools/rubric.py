@@ -24,6 +24,7 @@ from urllib.request import urlopen
 ROOT = Path(__file__).resolve().parents[1]
 WEIGHTS = dict(zip((f"R{i}" for i in range(1, 18)),
                    (3, 3, 2, 2, 3, 3, 4, 3, 2, 2, 2, 3, 2, 2, 1, 2, 1)))
+WEIGHTS["R25"] = 1
 NESTED = "ROYALE_RUBRIC_NESTED"
 
 
@@ -268,6 +269,25 @@ def appendix_check(root):
                 "limitation": "Checks coverage and nonempty fields, not scientific validity."})
 
 
+LINK = re.compile(r"\[[^\]]*\]\(([^)\s#]+)(?:#[^)]*)?\)")
+REPO_PATH = re.compile(r"`((?:findings|marts|docs|figures|pages|royale|tools)/[A-Za-z0-9_./-]+\.(?:md|py|parquet|png))`")
+
+
+def dead_links_check(root):
+    """R25: relative links and backticked repo paths in README, docs and findings must exist."""
+    dead = []
+    files = [root / "README.md", *sorted((root / "docs").glob("*.md")), *sorted((root / "findings").glob("*.md"))]
+    for doc in files:
+        if not doc.is_file():
+            continue
+        text = doc.read_text()
+        targets = [(t, doc.parent) for t in LINK.findall(text) if not re.match(r"[a-z][a-z0-9+.-]*:", t, re.I)]
+        targets += [(t, root) for t in REPO_PATH.findall(text)]
+        dead += [f"{doc.relative_to(root)} -> {t}" for t, base in targets if not (base / t).exists()]
+    return row("R25", "fail" if dead else "pass",
+               {"dead_references": dead, "limitation": "Checks file existence only, not anchors or that the target supports the claim."})
+
+
 def deliverables_check(root):
     writeup, disclosure = root / "docs/writeup.md", root / "docs/ai_disclosure.md"
     words = len(writeup.read_text().split()) if writeup.exists() else None
@@ -377,6 +397,7 @@ def run_checks(root=ROOT, *, run_tests=True, url=None):
     chart_details = [{"page": p["page"], **p.get("charts", {"problems": [p.get("error", "No chart inspection")]})} for p in pages]
     rows.append(row("R16", "fail" if any(p["problems"] for p in chart_details) else "manual", chart_details))
     rows.append(originality_check(root))
+    rows.append(dead_links_check(root))
     return sorted(rows, key=lambda r: int(r["id"][1:]))
 
 
