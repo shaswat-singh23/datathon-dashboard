@@ -176,3 +176,16 @@ def test_deployment_check_diagnoses_auth_redirect(tmp_path, monkeypatch):
     result = rubric.deployment_check(tmp_path, "https://x.streamlit.app/")
     assert result["status"] == "fail"
     assert "not public" in result["details"]["diagnosis"]
+
+
+def test_leakage_scan_flags_survey_and_shuffled_splits_but_not_docstrings():
+    clean = '"""No LVCVA or survey inputs."""\n# survey comment\nx = 1\n'
+    assert rubric.leak_problems(clean) == []
+    leaky = ("import pandas as pd\nfrom sklearn.model_selection import train_test_split\n"
+             "d = io.table('lvcva_visitors')\ntrain_test_split(d, shuffle=True)\n")
+    found = " ".join(rubric.leak_problems(leaky))
+    assert "lvcva_visitors" in found and "train_test_split" in found and "shuffle is not False" in found
+
+
+def test_leakage_check_passes_on_repo_forecast_code():
+    assert rubric.leakage_check(ROOT)["status"] == "pass"

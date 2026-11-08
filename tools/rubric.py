@@ -8,6 +8,7 @@ means the runner itself failed. ``--skip-pytest`` avoids recursion in its pytest
 from __future__ import annotations
 
 import argparse
+import ast
 from contextlib import ExitStack
 import json
 import os
@@ -339,6 +340,67 @@ def mart_and_tests_check(root, run_tests):
         return row("R15", "fail", {**details, "pytest": "Timed out after 600 seconds"})
 
 
+LEAK_WORDS = re.compile(r"lvcva|survey", re.I)
+RANDOM_SPLITS = {"train_test_split", "KFold", "StratifiedKFold", "ShuffleSplit", "GroupKFold",
+                 "cross_val_score", "cross_val_predict", "GridSearchCV", "RandomizedSearchCV"}
+FORECAST_ROOTS = ("royale/model.py", "royale/marts/q7_forecast.py")
+
+
+def _forecast_files(root):
+    """Forecast entry points plus every royale module they import, transitively."""
+    seen, todo = set(), [p for p in FORECAST_ROOTS if (root / p).is_file()]
+    while todo:
+        rel = todo.pop()
+        if rel in seen:
+            continue
+        seen.add(rel)
+        for node in ast.walk(ast.parse((root / rel).read_text())):
+            names = []
+            if isinstance(node, ast.ImportFrom) and node.module:
+                base = node.module.replace(".", "/")
+                names = [base] + [f"{base}/{a.name}" for a in node.names]
+            elif isinstance(node, ast.Import):
+                names = [a.name.replace(".", "/") for a in node.names]
+            todo += [f"{n}.py" for n in names if n.startswith("royale") and (root / f"{n}.py").is_file()]
+    return sorted(seen)
+
+
+def leak_problems(source, name="<src>"):
+    """Executable code only: docstrings and comments may mention banned sources."""
+    tree, problems = ast.parse(source), []
+    docstrings = {id(n.body[0].value) for n in ast.walk(tree)
+                  if isinstance(n, (ast.Module, ast.FunctionDef, ast.ClassDef, ast.AsyncFunctionDef))
+                  and n.body and isinstance(n.body[0], ast.Expr) and isinstance(n.body[0].value, ast.Constant)}
+    for n in ast.walk(tree):
+        text = None
+        if isinstance(n, ast.Constant) and isinstance(n.value, str) and id(n) not in docstrings:
+            text = n.value
+        elif isinstance(n, ast.Name):
+            text = n.id
+        elif isinstance(n, ast.Attribute):
+            text = n.attr
+        if text and LEAK_WORDS.search(text):
+            problems.append(f"{name}:{n.lineno} post-publication source: {text[:60]!r}")
+        callee = n.func.id if isinstance(n, ast.Call) and isinstance(n.func, ast.Name) else \
+            n.func.attr if isinstance(n, ast.Call) and isinstance(n.func, ast.Attribute) else None
+        if callee in RANDOM_SPLITS:
+            problems.append(f"{name}:{n.lineno} non-time-based split: {callee}")
+        if isinstance(n, ast.keyword) and n.arg == "shuffle" and not (
+                isinstance(n.value, ast.Constant) and n.value.value is False):
+            problems.append(f"{name}:{getattr(n.value, 'lineno', 0)} shuffle is not False")
+    return problems
+
+
+def leakage_check(root):
+    files = _forecast_files(root)
+    if not files:
+        return row("R11", "fail", {"problem": "No forecast code found"})
+    problems = [p for f in files for p in leak_problems((root / f).read_text(), f)]
+    return row("R11", "fail" if problems else "pass",
+               {"files_scanned": files, "problems": problems,
+                "limitation": "AST scan for post-2025 tables and shuffled splits; feature availability dates remain a human audit."})
+
+
 def budget_check(root):
     sys.path.insert(0, str(root))
     from royale import budget
@@ -393,7 +455,7 @@ def run_checks(root=ROOT, *, run_tests=True, url=None):
         appendix_check(root),
         row("R9", "manual", "Review uncertainty for every machine/group comparison and interactive state; keywords do not establish coverage or validity."),
         row("R10", "manual", "Audit money helpers, ratios of sums, dated placement joins and off-floor exclusions in every query; source mentions alone are insufficient."),
-        row("R11", "manual", "Trace forecast feature provenance and availability dates, including indirect imports; banning words in model code would flag explanatory comments and miss leakage."),
+        leakage_check(root),
         budget_check(root), deliverables_check(root), deployment_check(root, url),
         mart_and_tests_check(root, run_tests),
     ])
