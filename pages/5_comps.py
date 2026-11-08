@@ -4,6 +4,7 @@ import plotly.express as px
 import streamlit as st
 
 from royale.evidence import render_evidence
+from royale.filters import independent_scope_note
 from royale.theme import apply_theme
 
 from royale import io, money
@@ -15,7 +16,9 @@ st.caption("Monthly tracked guest activity and property totals. Comp cost is alr
 
 mart = io.mart("q5_comps")
 months = sorted(mart.month.unique())
+st.caption(independent_scope_note("Monthly guest scope: tracked guests and property totals by whole month"))
 a, b = st.select_slider("Period (whole months)", options=months, value=(months[0], months[-1]))
+st.caption(f"Monthly guest scope: {a} to {b}, whole months.")
 window = mart[mart.month.between(a, b)]
 tracked = window[window.population.eq("tracked")]
 property_totals = window[window.population.eq("property")]

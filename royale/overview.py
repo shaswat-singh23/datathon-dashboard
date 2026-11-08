@@ -1,9 +1,32 @@
 """Decision summaries over committed marts, without raw data or model refitting."""
 import calendar
+import re
 
 import pandas as pd
 
-from royale import money
+from royale import budget, config, money
+from royale.evidence import read_document
+from royale.marts.q6_actions import proposed_plan
+
+# Fixed full-period evidence for Home. Every number is copied from the cited finding;
+# the card shows that finding's own "Checked by" line rather than a claimed status.
+EVIDENCE_CARDS = (
+    dict(title="8/10 remain in the adjusted bottom ten",
+         body="Eight of the manager's ten lowest-house-win machines still rank in the bottom ten by "
+              "expected contribution per available hour.",
+         caveat="Descriptive screening: it does not show that a replacement would earn more.",
+         findings=("findings/22-machines.md",), page="pages/1_machines.py", link="Machines: rank comparison"),
+    dict(title="Back Forty shows an access association",
+         body="Back Forty demand fell about 30% while the Main Entrance–Back Forty walkway was closed "
+              "(Mar 3–Apr 6), then mostly returned. Nine of the manager's ten picks sit in Back Forty.",
+         caveat="Observational association, not a causal estimate of earnings lost to location.",
+         findings=("findings/16-demand-changes.md", "findings/31-location.md"), page="pages/2_demand.py", link="Demand: closure comparison"),
+    dict(title="M-1158 merits inspection",
+         body="One of 310 active machines, M-1158, has configured RTP outside its observed-payout interval "
+              "at ±3.8 standard errors; it is second-lowest on the manager's ranking.",
+         caveat="An inspection lead, not proof of a leak or wrongdoing.",
+         findings=("findings/32-leak-screen.md",), page="pages/1_machines.py", link="Machines: payout screen"),
+)
 
 
 def select_machine_days(data, start, end, bank="All banks"):
@@ -72,3 +95,20 @@ def weekday_profile(forecasts):
     profile.index = [calendar.day_name[day] for day in profile.index]
     profile.index.name = "Weekday"
     return profile
+
+
+def checked_by(finding):
+    """The finding's own review line, verbatim; "unchecked" when absent or blank."""
+    match = re.search(r"^- Checked by:\s*(.*)$", read_document(finding), re.M)
+    return match.group(1).strip() if match and match.group(1).strip() else "unchecked"
+
+
+def july_decision(actions):
+    """Fixed July plan from the complete January–June record; never takes a historical filter."""
+    catalog = actions.loc[actions.record_type == "catalog"]
+    plan = proposed_plan(actions)
+    violations = budget.validate_plan(catalog, plan)
+    cost = budget.plan_cost_usd(catalog, plan)
+    return dict(plan=plan, violations=violations, cost=cost, retained=config.BUDGET_USD - cost,
+                inspections=sum(line.quantity for line in plan if line.action_type_id == "A-INSPECT"),
+                targets=[target for line in plan for target in line.targets])

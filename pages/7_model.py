@@ -5,6 +5,7 @@ import pandas as pd
 import streamlit as st
 
 from royale.evidence import render_evidence
+from royale.filters import independent_scope_note
 from royale.theme import apply_theme
 
 from royale import io, visuals
@@ -51,6 +52,7 @@ st.caption('Scores come from forecasts frozen after fitting on January–April; 
            'Coin-in is a demand proxy; this forecast does not estimate staffing needs or promotion lift directly. '
            'One holdout cannot establish future superiority.')
 
+st.caption(independent_scope_note('May–June evaluation scope: the frozen forecasts are scored only on the May 1–June 30 holdout'))
 start, end = st.slider('Evaluation period', min_value=data.gaming_date.min().date(), max_value=data.gaming_date.max().date(),
                        value=(data.gaming_date.min().date(), data.gaming_date.max().date()))
 view = data[data.gaming_date.dt.date.between(start, end)]

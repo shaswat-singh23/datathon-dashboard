@@ -7,6 +7,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from royale.evidence import render_evidence
+from royale.filters import analysis_period, describe_period
 from royale.theme import apply_theme
 
 from royale import io, visuals
@@ -79,18 +80,21 @@ df["gaming_date"] = pd.to_datetime(df["gaming_date"])
 # ---- Filters: period + zone drill, in one row --------------------------------------------
 dmin, dmax = df["gaming_date"].min().date(), df["gaming_date"].max().date()
 c1, c2 = st.columns([3, 1])
-start, end = c1.slider("Analysis period", min_value=dmin, max_value=dmax, value=(dmin, dmax), format="MMM D")
+with c1:
+    start, end = analysis_period("demand", dmin, dmax)
 zones = df[["zone_id", "zone_name"]].drop_duplicates().sort_values("zone_name")
 zone_label = dict(zip(zones["zone_id"], zones["zone_name"]))
 zone = c2.selectbox("Zone drill", ["All zones"] + list(zones["zone_id"]),
                     format_func=lambda z: z if z == "All zones" else f"{zone_label[z]} ({z})")
 
 view = df[(df["gaming_date"].dt.date >= start) & (df["gaming_date"].dt.date <= end)]
+scope_name = "the whole floor" if zone == "All zones" else zone_label[zone]
+st.caption(f"Scope: {scope_name}, {describe_period(start, end)}. The daily period is shared with "
+           "Home, Machines, Demand, Downtime and the Actions evidence; the zone drill is this page's own.")
 if view.empty:
     st.warning("No gaming days in that period.")
     st.stop()
 scope = view if zone == "All zones" else view[view["zone_id"] == zone]
-scope_name = "the whole floor" if zone == "All zones" else zone_label[zone]
 
 daily = (scope.groupby(["gaming_date", "month", "local_weekday"], as_index=False)
          .agg(coin_in_usd=("coin_in_usd", "sum"), occupied_hours=("occupied_hours", "sum"),

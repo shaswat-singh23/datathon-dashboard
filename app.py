@@ -2,17 +2,19 @@
 import pandas as pd
 import streamlit as st
 
-from royale import budget, config, io
+from royale import config, io
 from royale.evidence import render_evidence
+from royale.filters import analysis_period, bank_drill, describe_period, reset_button
 from royale.theme import apply_theme
 from royale.marts.q1_machines import summarize
-from royale.marts.q6_actions import proposed_plan
-from royale.overview import period_totals, rank_stability, select_machine_days
+from royale.overview import (EVIDENCE_CARDS, checked_by, july_decision, period_totals, rank_stability,
+                             select_machine_days)
 
 st.set_page_config(page_title="The Gilded Ace: Luck, Location, or a Leak?", page_icon="♠", layout="wide")
 apply_theme("Executive overview")
-st.title("Should we replace the ten lowest-earning machines?")
-st.caption("The Gilded Ace · January–June 2025 · Fictional casino, synthetic data.")
+st.title("Investigate before replacing.")
+st.caption("Should we replace the ten lowest-earning machines? · The Gilded Ace, January–June 2025 · "
+           "Fictional casino, synthetic data.")
 
 try:
     machines = io.mart("q1_machines")
@@ -21,40 +23,72 @@ except FileNotFoundError as err:
     st.error(str(err))
     st.stop()
 
-catalog = actions.loc[actions.record_type == "catalog"]
-plan = proposed_plan(actions)
-violations = budget.validate_plan(catalog, plan)
-if violations:
-    st.error("July plan needs review: " + "; ".join(violations))
+# ---- The fixed July decision: never reads the historical filters below ----------------
+decision = july_decision(actions)
+if decision["violations"]:
+    st.error("July plan needs review: " + "; ".join(decision["violations"]))
     st.stop()
-cost = budget.plan_cost_usd(catalog, plan)
-targets = [target for line in plan for target in line.targets]
-st.info("Defer blanket replacement. Low realized earnings alone do not show that a new machine would help. "
+cost, retained, targets = decision["cost"], decision["retained"], decision["targets"]
+st.subheader("Fixed July plan · July 1–30, 2025")
+d1, d2, d3 = st.columns(3)
+d1.metric("Inspection budget", f"${cost:,.0f}", help="Fixed July plan, priced with royale.budget from the catalogue.")
+d2.metric("Budget retained", f"${retained:,.0f}",
+          help=f"Unspent part of the ${config.BUDGET_USD:,.0f} July budget. Not measured savings or profit.")
+count = decision["inspections"]
+d3.metric("Configuration inspection" if count == 1 else "Configuration inspections",
+          "One" if count == 1 else f"{count}", ", ".join(targets) if targets else None, delta_color="off", delta_arrow="off",
+          help="Payout/configuration check on the targets frozen from the complete January–June record.")
+st.info("Fixed July plan: defer blanket replacement. "
         + (f"Inspect payout/configuration on {', '.join(targets)} for ${cost:,.0f}; "
            if targets else "No current machine meets the full-period inspection rule; ")
-        + f"preserve ${config.BUDGET_USD - cost:,.0f} of the July budget. "
-        "Inspection buys information; no positive revenue recovery is estimated.")
-st.caption("July 1–30 plan: fixed targets and catalogue prices from the complete January–June record. "
-           "The evidence filters below recalculate historical comparisons; they do not retarget this plan. "
-           "Actions contains the downtime cost, alternative scenarios and measurement plan.")
-links = st.columns(3)
-links[0].page_link("pages/1_machines.py", label="Investigate machines, location and payouts")
-links[1].page_link("pages/6_actions.py", label="Review July prices, uncertainty and measurement")
-links[2].page_link("pages/7_model.py", label="Inspect model validation and baselines")
+        + f"retain ${retained:,.0f} of the July budget. Budget retained is not measured savings. "
+        "The inspection is an information purchase; revenue uplift is unproven. "
+        "Within budget and catalogue limits.")
+with st.expander("How the fixed July plan is calculated"):
+    st.write("Targets, quantities and prices come from the complete January–June record and the action catalogue: "
+             "manager bottom-ten machines still on the floor whose full-period payout luck z is below −3.8. "
+             "`royale.budget` prices each line as quantity × (unit cost + recurring per day × operating days after "
+             "lead time) and checks the $100,000 limit, quantity limits and incompatibility groups. "
+             "The historical filters further down never retarget or reprice this plan. "
+             "Actions contains the downtime cost, alternatives and measurement plan.")
 
+st.subheader("Evidence · Full January–June case")
+for column, card in zip(st.columns(3), EVIDENCE_CARDS):
+    with column.container(border=True):
+        st.markdown(f"**{card['title']}**")
+        st.caption("Full January–June case")
+        st.write(card["body"])
+        st.caption(f"Caveat: {card['caveat']}")
+        st.caption("Checked by: " + " · ".join(f"`{name.split('/')[-1]}` {checked_by(name)}"
+                                               for name in card["findings"]))
+        st.page_link(card["page"], label=card["link"])
+
+st.markdown("**Recommended path**")
+path = st.columns(4)
+for column, (route, label) in zip(path, [("pages/1_machines.py", "1 · Machines"), ("pages/2_demand.py", "2 · Demand"),
+                                          ("pages/6_actions.py", "3 · Actions"), ("pages/7_model.py", "4 · Model")]):
+    column.page_link(route, label=label)
+
+# ---- Filtered exploration ---------------------------------------------------------------
+st.header("Explore the historical data")
+st.caption("Daily on-floor machine-days. The period carries over to Machines, Demand, Downtime and the Actions "
+           "evidence; the bank carries over to Machines. Neither changes the fixed July plan or the evidence above.")
 dates = pd.to_datetime(machines.gaming_date)
-start, end = st.slider("Analysis period", min_value=dates.min().date(), max_value=dates.max().date(),
-                       value=(dates.min().date(), dates.max().date()))
-bank = st.selectbox("Bank drill", ["All banks"] + sorted(machines.bank_id.dropna().unique().tolist()))
+start, end = analysis_period("home", dates.min().date(), dates.max().date())
+f1, f2 = st.columns([3, 1])
+with f1:
+    bank = bank_drill("home", machines.bank_id.dropna().unique().tolist())
+with f2:
+    reset_button("home")
 selected = select_machine_days(machines, start, end, bank)
+scope = f"Historical scope: {bank}, {describe_period(start, end)}"
 if selected.empty:
+    st.caption(scope)
     st.info("No on-floor machine-days in this selection. Widen the period or choose another bank.")
 else:
     totals = period_totals(selected)
-    st.caption(f"Historical scope: {bank}, {start:%b %d}–{end:%b %d}, "
-               f"{selected.machine_id.nunique()} machines and {len(selected):,} on-floor machine-days. "
-               "Every historical KPI, chart and rank below uses this selection. "
-               "Filters on other pages are independent; set them again when following a link.")
+    st.caption(f"{scope}; {selected.machine_id.nunique()} machines and {len(selected):,} on-floor machine-days. "
+               "Every historical KPI, chart and rank below uses this selection.")
     k1, k2, k3, k4 = st.columns(4)
     k1.metric("Coin-in", f"${totals['coin_in']:,.0f}")
     k2.metric("House win", f"${totals['house_win']:,.0f}",
