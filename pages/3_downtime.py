@@ -9,6 +9,7 @@ import streamlit as st
 
 from royale.evidence import render_evidence
 from royale.filters import analysis_period, describe_period
+from royale import visuals
 from royale.theme import ADVERSE, PALETTE, apply_theme
 
 from royale import io
@@ -111,7 +112,7 @@ st.subheader(f"When it happened: lost machine-hours per day, {scope_name}")
 daily = md.groupby("gaming_date", as_index=False).agg(lost_h=("lost_h", "sum"))
 fig = go.Figure(go.Bar(x=daily["gaming_date"], y=daily["lost_h"], marker_color=LOST, marker_line_width=0,
                        hovertemplate="%{x|%a %b %d}: %{y:,.1f} lost hrs<extra></extra>"))
-st.plotly_chart(style(fig, 260).update_layout(bargap=0.15), width="stretch")
+st.plotly_chart(visuals.label(style(fig, 260).update_layout(bargap=0.15), "Lost machine-hours per day", "Gaming date", "Lost machine-hours"), width="stretch")
 
 # ---- By month and manufacturer ---------------------------------------------------------
 left, right = st.columns(2)
@@ -122,7 +123,7 @@ with left:
                           customdata=mo[["lost_share", "lost_coin_in"]],
                           hovertemplate="%{x}: %{y:,.0f} lost hrs (%{customdata[0]:.2%} of scheduled), "
                                         "est. lost coin-in $%{customdata[1]:,.0f}<extra></extra>"))
-    st.plotly_chart(style(f2, 260).update_layout(bargap=0.35), width="stretch")
+    st.plotly_chart(visuals.label(style(f2, 260).update_layout(bargap=0.35), "Lost machine-hours by month", "Month", "Lost machine-hours"), width="stretch")
     st.caption("A period that cuts a month shows only the days inside it.")
 with right:
     st.subheader("By manufacturer")
@@ -135,7 +136,7 @@ with right:
                                         "across %{customdata[1]} machines (%{customdata[2]:.1f} per machine)"
                                         "<extra></extra>"))
     f3.update_xaxes(tickformat=".1%", showgrid=True, gridcolor="rgba(0,0,0,0.08)")
-    st.plotly_chart(style(f3, 260).update_layout(bargap=0.35), width="stretch")
+    st.plotly_chart(visuals.label(style(f3, 260).update_layout(bargap=0.35), "Share of scheduled hours lost by manufacturer", "Share of scheduled hours lost", "Manufacturer"), width="stretch")
     st.caption("Share of scheduled hours lost, so fleet size does not drive the ranking.")
 
 with st.expander("Month and manufacturer tables", expanded=False):
@@ -178,7 +179,7 @@ else:
                    customdata=sh["n"], hovertemplate="%{x}: wait %{y:.2f} h (n=%{customdata:,})<extra></extra>")
         f4.add_bar(x=labels, y=sh["fix"], name="Fix", marker_color=PRIMARY, marker_line_width=0,
                    customdata=sh["n"], hovertemplate="%{x}: fix %{y:.2f} h (n=%{customdata:,})<extra></extra>")
-        st.plotly_chart(style(f4, 280, ".1f").update_layout(barmode="stack", bargap=0.4), width="stretch")
+        st.plotly_chart(visuals.label(style(f4, 280, ".1f").update_layout(barmode="stack", bargap=0.4), "Repair wait and fix hours by shift", "Shift the fault opened", "Mean hours"), width="stretch")
         st.caption("Wait = opened_at to work_started_at; fix = work_started_at to available_at. "
                    "Shift from local open hour (shift_roster boundaries: day 06-14, swing 14-22, grave 22-06).")
     with right:
@@ -190,7 +191,7 @@ else:
                                   hovertemplate="%{x}:00: median %{y:.1f} h (n=%{customdata})<extra></extra>"))
         f5.update_xaxes(tickmode="array", tickvals=list(range(0, 24, 3)),
                         ticktext=[f"{h:02d}:00" for h in range(0, 24, 3)])
-        st.plotly_chart(style(f5, 280, ".1f"), width="stretch")
+        st.plotly_chart(visuals.label(style(f5, 280, ".1f"), "Median repair response by hour opened", "Local hour the fault opened", "Median response (hours)"), width="stretch")
         st.caption("Hours with few tickets (hover for n) are noisy.")
     st.dataframe(sh.rename(index=SHIFT_LABEL), width="stretch",
                  column_config={"n": st.column_config.NumberColumn("Tickets", format="%d"),

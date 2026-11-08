@@ -3,7 +3,7 @@
 - Claim: the dashboard deploys from `master` with committed marts only; no raw data, secrets or `DATA_DIR` are needed on the server.
 - Evidence: with `DATA_DIR` pointed at an empty directory, `app.py` and all 7 pages in `pages/` render with zero exceptions under Streamlit AppTest, on both Python 3.13 (local) and Python 3.12 (Community Cloud default) using the locked dependency set (`uv sync --locked --python 3.12`: 45 packages). Script: the Reproduce block below, result `FAILURES 0` on both versions. `marts/` is 12 MB across 11 parquet files, each under 5 MB.
 - So what: judges open one link and every page works; the organizer data never leaves our machines.
-- Checked by: unchecked
+- Checked by: Shaswat (Claude Code, Sonnet 5.5), 2026-11-07 23:44 (Reproduce block on Python 3.12 and 3.13 with an empty `DATA_DIR`: `FAILURES 0`; 11 marts, largest 4.45 MB; anonymous `curl -L` with cookie jar: HTTP 200 after 3 redirects. The two PENDING items under Live URL were not checked)
 
 ## Reproduce
 

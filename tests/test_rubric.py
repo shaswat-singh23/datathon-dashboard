@@ -165,3 +165,14 @@ def test_checker_cli_writes_complete_report_without_raw_data(tmp_path):
     # Every route must have actually been attempted, even if its app crashed.
     assert len(rows[0]["details"]) == 1 + len(list((ROOT / "pages").glob("*.py")))
     assert not any(p["details"] == "" for p in rows[0]["details"])
+
+
+def test_deployment_check_diagnoses_auth_redirect(tmp_path, monkeypatch):
+    def loop(*args, **kwargs):
+        raise OSError("redirect loop")
+    monkeypatch.setattr(rubric, "urlopen", loop)
+    monkeypatch.setattr(rubric, "_first_redirect",
+                        lambda url: "https://share.streamlit.io/-/auth/app?redirect_uri=x")
+    result = rubric.deployment_check(tmp_path, "https://x.streamlit.app/")
+    assert result["status"] == "fail"
+    assert "not public" in result["details"]["diagnosis"]

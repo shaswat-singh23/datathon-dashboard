@@ -7,10 +7,12 @@ separately in #24. These are real Chromium captures of the Streamlit pages, with
 the navigation, filters and complete selected sections visible. The headline is
 a standalone Plotly chart of the existing README result.
 
-**Provisional:** all linked source findings currently say `Checked by: unchecked`.
-Matching a screenshot to its source is an author verification, not independent
-analytical review. Retain that status when reusing these figures in slides or
-Devpost; finalize claims after the source findings are independently checked.
+**Check status:** the linked findings 17, 18, 19, 22, 23 and 47 carry a named
+`Checked by` line (tool-assisted re-run, 2026-11-07). Finding 16 is checked for
+claims 1 and 3 only; its claim 2 (small-event lifts) is pending #74. Findings 24
+and 70 (deployment and judge run-through) are still `unchecked`. Matching a
+screenshot to its source is an author verification, not independent analytical
+review; cite only the checked claims in slides or Devpost.
 
 | Figure | Period and drill | Finding and reproduction | Values checked / comparison |
 |---|---|---|---|
