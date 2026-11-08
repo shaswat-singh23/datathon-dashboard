@@ -176,3 +176,19 @@ def test_deployment_check_diagnoses_auth_redirect(tmp_path, monkeypatch):
     result = rubric.deployment_check(tmp_path, "https://x.streamlit.app/")
     assert result["status"] == "fail"
     assert "not public" in result["details"]["diagnosis"]
+
+
+def test_reproducible_marts_detects_stale_mart_and_skips_without_data(tmp_path):
+    data = Path(os.environ.get("DATA_DIR", ""))
+    if not (data / "1_prepared_views").is_dir():
+        row = rubric.reproducible_marts_check(tmp_path)
+        assert row["status"] in {"manual", "fail"}  # never a false pass without data
+        return
+    import shutil
+    shutil.copytree(ROOT / "royale", tmp_path / "royale")
+    shutil.copytree(ROOT / "marts", tmp_path / "marts")
+    assert rubric.reproducible_marts_check(tmp_path)["status"] == "pass"
+    stale = pd.read_parquet(tmp_path / "marts/q5_comps.parquet")
+    stale.iloc[:, -1] = stale.iloc[:, -1].astype("float64") + 1 if stale.iloc[:, -1].dtype.kind == "f" else stale.iloc[:, -1]
+    stale.to_parquet(tmp_path / "marts/q5_comps.parquet", index=False)
+    assert rubric.reproducible_marts_check(tmp_path)["status"] == "fail"

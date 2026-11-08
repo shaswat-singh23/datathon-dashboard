@@ -25,6 +25,7 @@ ROOT = Path(__file__).resolve().parents[1]
 WEIGHTS = dict(zip((f"R{i}" for i in range(1, 18)),
                    (3, 3, 2, 2, 3, 3, 4, 3, 2, 2, 2, 3, 2, 2, 1, 2, 1)))
 NESTED = "ROYALE_RUBRIC_NESTED"
+WEIGHTS["R36"] = 2
 
 
 def row(check, status, details):
@@ -367,6 +368,42 @@ def originality_check(root):
                {"candidates": candidates, "details": "Review whether the result is unexpected; marker plus reproduction heading alone is insufficient."})
 
 
+REBUILD = """
+import json, shutil, sys, tempfile
+from pathlib import Path
+import pandas as pd
+from royale import build, config
+if not config.data_available():
+    print(json.dumps({"skipped": "no raw data at DATA_DIR"})); sys.exit(0)
+tmp = Path(tempfile.mkdtemp())
+for f in config.MARTS_DIR.glob("*.parquet"):
+    shutil.copy(f, tmp / f.name)
+committed = config.MARTS_DIR
+config.MARTS_DIR = tmp
+build.main()
+bad = {}
+for f in sorted(committed.glob("*.parquet")):
+    try:
+        pd.testing.assert_frame_equal(pd.read_parquet(f), pd.read_parquet(tmp / f.name), check_dtype=False, rtol=1e-6)
+    except AssertionError as e:
+        bad[f.name] = str(e)[:200]
+print(json.dumps({"differ": bad}))
+"""
+
+
+def reproducible_marts_check(root):
+    """R36: committed marts equal a fresh rebuild from raw data (float tolerance 1e-6)."""
+    try:
+        result = subprocess.run([sys.executable, "-c", REBUILD], cwd=root, capture_output=True,
+                                text=True, timeout=600, env=dict(os.environ, PYTHONPATH=str(root)))
+        report = json.loads(result.stdout.strip().splitlines()[-1])
+    except (subprocess.TimeoutExpired, ValueError, IndexError):
+        return row("R36", "fail", "Rebuild did not finish or printed no report")
+    if "skipped" in report:
+        return row("R36", "manual", report["skipped"] + "; run where DATA_DIR is set")
+    return row("R36", "fail" if report["differ"] else "pass", report)
+
+
 def run_checks(root=ROOT, *, run_tests=True, url=None):
     pages = page_checks(root)
     rows = [page_row("R1", pages, lambda p: ("pass" if p["seconds"] < 5 else "fail",
@@ -400,6 +437,7 @@ def run_checks(root=ROOT, *, run_tests=True, url=None):
     chart_details = [{"page": p["page"], **p.get("charts", {"problems": [p.get("error", "No chart inspection")]})} for p in pages]
     rows.append(row("R16", "fail" if any(p["problems"] for p in chart_details) else "manual", chart_details))
     rows.append(originality_check(root))
+    rows.append(reproducible_marts_check(root))
     return sorted(rows, key=lambda r: int(r["id"][1:]))
 
 
