@@ -51,7 +51,7 @@ Against the simple before-closure baseline, Back Forty demand falls **28.5%** an
 
 ## Unexpected result
 
-Unexpected: the manager's list assumes weak machines, yet in all seven screened picks the machine earns 93% to 115% (92.8% to 114.5% in the table) of what same-title neighbours in the same zone earn per available hour. The shortfall tracks the zone (Back Forty demand and traffic), not the machine. Replacing these machines would carry the weak location to the new ones. Steps to reproduce are in the Reproduce section below. This is a descriptive association, not a causal estimate.
+Unexpected relative to the manager's bottom-10 baseline by raw total house win: seven of the nine picks with matched peers achieve at least 90% of their same-title local peers' coin-in per available hour. For those seven, local peer demand is 34.8% to 40.3% lower than same-title peers in other zones: weak demand is largely shared with the zone. The 90% threshold is part of the screen. M-1120 (83.6%) and M-5076 (88.5%) fall below it. If a location effect is real, replacing machines in place alone would not be expected to fix it; a measured location experiment is needed to find out. This is a descriptive association, not a causal estimate. Steps to reproduce are in the Reproduce section below.
 
 ## Reproduce
 
