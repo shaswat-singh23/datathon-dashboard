@@ -176,3 +176,15 @@ def test_deployment_check_diagnoses_auth_redirect(tmp_path, monkeypatch):
     result = rubric.deployment_check(tmp_path, "https://x.streamlit.app/")
     assert result["status"] == "fail"
     assert "not public" in result["details"]["diagnosis"]
+
+
+def test_writeup_content_requires_plan_and_baseline_and_budget(tmp_path):
+    (tmp_path / "docs").mkdir()
+    good = ("The manager list of ten picks. MAE of the constant mean baseline is worse. "
+            "Total spend $1,200. Uncertainty is a scenario. We monitor against controls.")
+    (tmp_path / "docs/writeup.md").write_text(good)
+    assert rubric.writeup_content_check(tmp_path)["status"] == "pass"
+    (tmp_path / "docs/writeup.md").write_text(good.replace("Total spend $1,200", "Total spend $120,000"))
+    assert rubric.writeup_content_check(tmp_path)["status"] == "fail"
+    (tmp_path / "docs/writeup.md").write_text("The manager list of ten picks.")
+    assert rubric.writeup_content_check(tmp_path)["status"] == "fail"
