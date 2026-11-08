@@ -165,3 +165,12 @@ def test_checker_cli_writes_complete_report_without_raw_data(tmp_path):
     # Every route must have actually been attempted, even if its app crashed.
     assert len(rows[0]["details"]) == 1 + len(list((ROOT / "pages").glob("*.py")))
     assert not any(p["details"] == "" for p in rows[0]["details"])
+
+
+def test_money_scan_clean_tree_and_planted_violation(tmp_path):
+    assert rubric.money_check(ROOT)["status"] == "manual"
+    (tmp_path / "pages").mkdir()
+    (tmp_path / "pages" / "x.py").write_text('q = "SELECT AVG(house_win / coin_in) FROM t"\ntheo = df.coin_in * (1 - rtp)\n')
+    bad = rubric.money_check(tmp_path)
+    assert bad["status"] == "fail"
+    assert {v["file"] for v in bad["details"]["violations"]} == {"pages/x.py:1", "pages/x.py:2"}
