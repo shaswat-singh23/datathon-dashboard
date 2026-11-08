@@ -85,6 +85,16 @@ def test_deliverable_word_limit_and_missing_disclosure(tmp_path):
     assert rubric.deliverables_check(tmp_path)["status"] == "fail"
 
 
+def test_demo_script_word_limit(tmp_path):
+    (tmp_path / "docs").mkdir()
+    script = tmp_path / "docs/demo_script.md"
+    assert rubric.demo_script_check(tmp_path)["status"] == "fail"
+    script.write_text("| Time | Say | Words |\n|---|---|---:|\n| 0:00 | hi | 290 |\n")
+    assert rubric.demo_script_check(tmp_path)["status"] == "pass"
+    script.write_text("| Time | Say | Words |\n|---|---|---:|\n| 0:00 | hi | 200 |\n| 0:30 | yo | 91 |\n")
+    assert rubric.demo_script_check(tmp_path)["status"] == "fail"
+
+
 def test_mart_size_and_skipped_pytest_cannot_pass(monkeypatch, tmp_path):
     path = tmp_path / "sample.parquet"
     path.write_bytes(b"small")

@@ -24,6 +24,7 @@ from urllib.request import HTTPRedirectHandler, build_opener, urlopen
 ROOT = Path(__file__).resolve().parents[1]
 WEIGHTS = dict(zip((f"R{i}" for i in range(1, 18)),
                    (3, 3, 2, 2, 3, 3, 4, 3, 2, 2, 2, 3, 2, 2, 1, 2, 1)))
+WEIGHTS["R28"] = 1
 NESTED = "ROYALE_RUBRIC_NESTED"
 
 
@@ -277,6 +278,19 @@ def deliverables_check(root):
                 "word_rule": "Whitespace-separated tokens, including headings and links (conservative)."})
 
 
+def demo_script_check(root, limit_words=290):
+    """R28: spoken words in the demo script's table fit 120 s at 145 wpm."""
+    path = root / "docs/demo_script.md"
+    if not path.is_file():
+        return row("R28", "fail", {"error": "docs/demo_script.md missing"})
+    words = [int(m.group(1)) for line in path.read_text().splitlines()
+             if line.startswith("|") and (m := re.search(r"\|\s*(\d+)\s*\|\s*$", line))]
+    total = sum(words)
+    return row("R28", "pass" if words and total <= limit_words else "fail",
+               {"spoken_words": total, "segments": len(words), "limit_words": limit_words,
+                "limitation": "Trusts the table's Words column and a 145 wpm pace; not a timed take."})
+
+
 def deployment_check(root, url=None):
     if not url:
         readme = root / "README.md"
@@ -394,7 +408,7 @@ def run_checks(root=ROOT, *, run_tests=True, url=None):
         row("R9", "manual", "Review uncertainty for every machine/group comparison and interactive state; keywords do not establish coverage or validity."),
         row("R10", "manual", "Audit money helpers, ratios of sums, dated placement joins and off-floor exclusions in every query; source mentions alone are insufficient."),
         row("R11", "manual", "Trace forecast feature provenance and availability dates, including indirect imports; banning words in model code would flag explanatory comments and miss leakage."),
-        budget_check(root), deliverables_check(root), deployment_check(root, url),
+        budget_check(root), deliverables_check(root), demo_script_check(root), deployment_check(root, url),
         mart_and_tests_check(root, run_tests),
     ])
     chart_details = [{"page": p["page"], **p.get("charts", {"problems": [p.get("error", "No chart inspection")]})} for p in pages]
