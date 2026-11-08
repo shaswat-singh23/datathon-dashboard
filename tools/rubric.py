@@ -24,6 +24,7 @@ from urllib.request import HTTPRedirectHandler, build_opener, urlopen
 ROOT = Path(__file__).resolve().parents[1]
 WEIGHTS = dict(zip((f"R{i}" for i in range(1, 18)),
                    (3, 3, 2, 2, 3, 3, 4, 3, 2, 2, 2, 3, 2, 2, 1, 2, 1)))
+WEIGHTS["R46"] = 2
 NESTED = "ROYALE_RUBRIC_NESTED"
 
 
@@ -367,6 +368,26 @@ def originality_check(root):
                {"candidates": candidates, "details": "Review whether the result is unexpected; marker plus reproduction heading alone is insufficient."})
 
 
+COMP_DOUBLE_COUNT = re.compile(
+    r"(cogs|cost_of_goods)[^\n]*comp_cost|comp_cost[^\n]*(cogs|cost_of_goods)"
+    r"|(profit|margin|net)\w*\s*=[^\n]*-\s*[\w.\[\]\"']*comp_cost", re.I)
+
+
+def comp_once_check(root):
+    """Comp cost is inside POS cogs (AGENTS.md); code must not subtract it a second time."""
+    hits = []
+    files = [root / "app.py", *(root / "pages").glob("*.py"), *(root / "royale").rglob("*.py")]
+    for path in files:
+        if not path.exists():
+            continue
+        for number, line in enumerate(path.read_text().splitlines(), 1):
+            if not line.lstrip().startswith("#") and COMP_DOUBLE_COUNT.search(line):
+                hits.append(f"{path.relative_to(root)}:{number}")
+    return row("R46", "fail" if hits else "pass",
+               {"hits": hits, "scanned_files": len(files),
+                "limitation": "Line-level pattern scan; it cannot see a double subtraction split across lines or helpers."})
+
+
 def run_checks(root=ROOT, *, run_tests=True, url=None):
     pages = page_checks(root)
     rows = [page_row("R1", pages, lambda p: ("pass" if p["seconds"] < 5 else "fail",
@@ -400,6 +421,7 @@ def run_checks(root=ROOT, *, run_tests=True, url=None):
     chart_details = [{"page": p["page"], **p.get("charts", {"problems": [p.get("error", "No chart inspection")]})} for p in pages]
     rows.append(row("R16", "fail" if any(p["problems"] for p in chart_details) else "manual", chart_details))
     rows.append(originality_check(root))
+    rows.append(comp_once_check(root))
     return sorted(rows, key=lambda r: int(r["id"][1:]))
 
 
