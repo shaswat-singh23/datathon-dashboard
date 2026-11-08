@@ -24,6 +24,7 @@ from urllib.request import HTTPRedirectHandler, build_opener, urlopen
 ROOT = Path(__file__).resolve().parents[1]
 WEIGHTS = dict(zip((f"R{i}" for i in range(1, 18)),
                    (3, 3, 2, 2, 3, 3, 4, 3, 2, 2, 2, 3, 2, 2, 1, 2, 1)))
+WEIGHTS["R54"] = 1
 NESTED = "ROYALE_RUBRIC_NESTED"
 
 
@@ -367,6 +368,16 @@ def originality_check(root):
                {"candidates": candidates, "details": "Review whether the result is unexpected; marker plus reproduction heading alone is insufficient."})
 
 
+def finding_issue_check(root):
+    """R54: findings/<N>-slug.md must say 'Issue: #N' so a claim traces to its ticket."""
+    bad = []
+    for path in sorted((root / "findings").glob("[0-9]*.md")):
+        match = re.search(r"^- Issue: #(\d+)", path.read_text(), re.M)
+        if not match or match.group(1) != path.name.split("-", 1)[0]:
+            bad.append({"file": path.name, "issue_line": match.group(1) if match else None})
+    return row("R54", "fail" if bad else "pass", {"mismatched": bad})
+
+
 def run_checks(root=ROOT, *, run_tests=True, url=None):
     pages = page_checks(root)
     rows = [page_row("R1", pages, lambda p: ("pass" if p["seconds"] < 5 else "fail",
@@ -400,6 +411,7 @@ def run_checks(root=ROOT, *, run_tests=True, url=None):
     chart_details = [{"page": p["page"], **p.get("charts", {"problems": [p.get("error", "No chart inspection")]})} for p in pages]
     rows.append(row("R16", "fail" if any(p["problems"] for p in chart_details) else "manual", chart_details))
     rows.append(originality_check(root))
+    rows.append(finding_issue_check(root))
     return sorted(rows, key=lambda r: int(r["id"][1:]))
 
 

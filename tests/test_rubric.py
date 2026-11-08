@@ -176,3 +176,13 @@ def test_deployment_check_diagnoses_auth_redirect(tmp_path, monkeypatch):
     result = rubric.deployment_check(tmp_path, "https://x.streamlit.app/")
     assert result["status"] == "fail"
     assert "not public" in result["details"]["diagnosis"]
+
+
+def test_finding_issue_check_flags_mismatch(tmp_path):
+    (tmp_path / "findings").mkdir()
+    (tmp_path / "findings/5-ok.md").write_text("- Issue: #5 | Author: x\n")
+    assert rubric.finding_issue_check(tmp_path)["status"] == "pass"
+    (tmp_path / "findings/6-bad.md").write_text("- Issue: #7 | Author: x\n")
+    result = rubric.finding_issue_check(tmp_path)
+    assert result["status"] == "fail"
+    assert result["details"]["mismatched"][0]["file"] == "6-bad.md"
