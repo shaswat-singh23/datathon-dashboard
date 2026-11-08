@@ -24,6 +24,7 @@ from urllib.request import HTTPRedirectHandler, build_opener, urlopen
 ROOT = Path(__file__).resolve().parents[1]
 WEIGHTS = dict(zip((f"R{i}" for i in range(1, 18)),
                    (3, 3, 2, 2, 3, 3, 4, 3, 2, 2, 2, 3, 2, 2, 1, 2, 1)))
+WEIGHTS["R37"] = 1
 NESTED = "ROYALE_RUBRIC_NESTED"
 
 
@@ -277,6 +278,16 @@ def deliverables_check(root):
                 "word_rule": "Whitespace-separated tokens, including headings and links (conservative)."})
 
 
+def abs_path_check(root):
+    """R37: shipped code must not hardcode a machine-specific absolute path."""
+    pattern = re.compile(r"(?:/Users/|/home/[a-z]|[A-Za-z]:\\\\Users\\\\)[\w.-]+")
+    files = [*root.glob("app.py"), *(f for d in ("pages", "royale", "tools") for f in (root / d).rglob("*.py"))]
+    hits = [f"{f.relative_to(root)}:{n}" for f in files if f.name != "rubric.py"
+            for n, line in enumerate(f.read_text().splitlines(), 1) if pattern.search(line)]
+    return row("R37", "fail" if hits else "pass",
+               {"hardcoded_paths": hits, "limitation": "Regex scan of .py files; docs and comments in rubric.py are exempt."})
+
+
 def deployment_check(root, url=None):
     if not url:
         readme = root / "README.md"
@@ -395,7 +406,7 @@ def run_checks(root=ROOT, *, run_tests=True, url=None):
         row("R10", "manual", "Audit money helpers, ratios of sums, dated placement joins and off-floor exclusions in every query; source mentions alone are insufficient."),
         row("R11", "manual", "Trace forecast feature provenance and availability dates, including indirect imports; banning words in model code would flag explanatory comments and miss leakage."),
         budget_check(root), deliverables_check(root), deployment_check(root, url),
-        mart_and_tests_check(root, run_tests),
+        mart_and_tests_check(root, run_tests), abs_path_check(root),
     ])
     chart_details = [{"page": p["page"], **p.get("charts", {"problems": [p.get("error", "No chart inspection")]})} for p in pages]
     rows.append(row("R16", "fail" if any(p["problems"] for p in chart_details) else "manual", chart_details))
