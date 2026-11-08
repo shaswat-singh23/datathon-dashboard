@@ -49,6 +49,10 @@ Against the simple before-closure baseline, Back Forty demand falls **28.5%** an
 - Streamlit AppTest loads the default page (7/10), changes game to Royal Draw, drills a Back Forty bank, narrows to March–April (no three-month interval), selects March 8 alone (complete-month notice), and selects February alone without a closure phase. No exceptions. Pages read committed marts only.
 - `uv run pytest -q`: **45 passed**. `git diff --check` passes. Findings remain unchecked pending independent review.
 
+## Unexpected result
+
+Unexpected: the manager's list assumes weak machines, yet in all seven screened picks the machine earns 93% to 115% (92.8% to 114.5% in the table) of what same-title neighbours in the same zone earn per available hour. The shortfall tracks the zone (Back Forty demand and traffic), not the machine. Replacing these machines would carry the weak location to the new ones. Steps to reproduce are in the Reproduce section below. This is a descriptive association, not a causal estimate.
+
 ## Reproduce
 
 Build the mart, run the suite, then run this from the repository root. It reproduces the result, baseline, joins/totals, traffic deduplication, closure comparison and default page check:
