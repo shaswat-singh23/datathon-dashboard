@@ -8,6 +8,7 @@ means the runner itself failed. ``--skip-pytest`` avoids recursion in its pytest
 from __future__ import annotations
 
 import argparse
+import ast
 from contextlib import ExitStack
 import json
 import os
@@ -336,6 +337,40 @@ def budget_check(root):
         return row("R12", "fail", str(exc))
 
 
+def leakage_check(root):
+    """R11: forecast code (and royale modules it imports) never names LVCVA/survey data; training ends before the holdout."""
+    import pandas as pd
+    banned = re.compile(r"lvcva|survey", re.I)
+    todo, seen, hits = [root / "royale/model.py", root / "royale/marts/q7_forecast.py"], set(), []
+    while todo:
+        path = todo.pop()
+        if path in seen or not path.exists():
+            continue
+        seen.add(path)
+        tree = ast.parse(path.read_text())
+        docstrings = {id(n.body[0].value) for n in ast.walk(tree)
+                      if isinstance(n, (ast.Module, ast.FunctionDef, ast.ClassDef))
+                      and n.body and isinstance(n.body[0], ast.Expr) and isinstance(n.body[0].value, ast.Constant)}
+        for node in ast.walk(tree):
+            text = (node.id if isinstance(node, ast.Name) else node.attr if isinstance(node, ast.Attribute)
+                    else node.value if isinstance(node, ast.Constant) and isinstance(node.value, str) and id(node) not in docstrings
+                    else node.name if isinstance(node, ast.alias) else "")
+            if banned.search(text):
+                hits.append(f"{path.relative_to(root)}:{node.lineno}: {text[:60]}")
+            mods = ([node.module] if isinstance(node, ast.ImportFrom) and node.module else
+                    [a.name for a in node.names] if isinstance(node, ast.Import) else [])
+            todo += [root / (m.replace(".", "/") + ".py") for m in mods if m.startswith("royale")]
+    window = {}
+    mart = root / "marts/q7_forecast.parquet"
+    if mart.exists():
+        df = pd.read_parquet(mart)
+        window = {"training_end": str(df.training_end.max())[:10], "first_test_date": str(df.gaming_date.min())[:10]}
+    ok = not hits and bool(window) and window["training_end"] < window["first_test_date"]
+    return row("R11", "pass" if ok else "fail", {"files_scanned": sorted(str(p.relative_to(root)) for p in seen),
+               "banned_references": hits, **window,
+               "limitation": "Static scan of code and the mart window; feature availability dates beyond gaming_date are not traced."})
+
+
 def originality_check(root):
     findings = [p for p in (root / "findings").glob("*.md") if p.name != "README.md"]
     candidates = [p.name for p in findings if re.search(r"\bunexpected\b", p.read_text(), re.I)
@@ -370,7 +405,7 @@ def run_checks(root=ROOT, *, run_tests=True, url=None):
         appendix_check(root),
         row("R9", "manual", "Review uncertainty for every machine/group comparison and interactive state; keywords do not establish coverage or validity."),
         row("R10", "manual", "Audit money helpers, ratios of sums, dated placement joins and off-floor exclusions in every query; source mentions alone are insufficient."),
-        row("R11", "manual", "Trace forecast feature provenance and availability dates, including indirect imports; banning words in model code would flag explanatory comments and miss leakage."),
+        leakage_check(root),
         budget_check(root), deliverables_check(root), deployment_check(root, url),
         mart_and_tests_check(root, run_tests),
     ])

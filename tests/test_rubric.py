@@ -165,3 +165,23 @@ def test_checker_cli_writes_complete_report_without_raw_data(tmp_path):
     # Every route must have actually been attempted, even if its app crashed.
     assert len(rows[0]["details"]) == 1 + len(list((ROOT / "pages").glob("*.py")))
     assert not any(p["details"] == "" for p in rows[0]["details"])
+
+
+def test_r11_flags_lvcva_in_forecast_code_but_not_in_docstrings(tmp_path):
+    (tmp_path / "royale/marts").mkdir(parents=True)
+    (tmp_path / "marts").mkdir()
+    pd.DataFrame({"gaming_date": ["2025-05-01"], "training_end": ["2025-04-30"]}).to_parquet(tmp_path / "marts/q7_forecast.parquet")
+    (tmp_path / "royale/marts/q7_forecast.py").write_text("from royale.model import fit\n")
+    (tmp_path / "royale/model.py").write_text('"""Never uses LVCVA."""\n# survey\nx = 1\n')
+    assert rubric.leakage_check(tmp_path)["status"] == "pass"
+    (tmp_path / "royale/model.py").write_text('x = "lvcva_visitors"\n')
+    result = rubric.leakage_check(tmp_path)
+    assert result["status"] == "fail" and result["details"]["banned_references"]
+
+
+def test_r11_fails_when_training_overlaps_holdout(tmp_path):
+    (tmp_path / "royale/marts").mkdir(parents=True)
+    (tmp_path / "marts").mkdir()
+    pd.DataFrame({"gaming_date": ["2025-05-01"], "training_end": ["2025-05-02"]}).to_parquet(tmp_path / "marts/q7_forecast.parquet")
+    (tmp_path / "royale/model.py").write_text("x = 1\n")
+    assert rubric.leakage_check(tmp_path)["status"] == "fail"
