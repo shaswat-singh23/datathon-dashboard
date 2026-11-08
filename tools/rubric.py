@@ -24,6 +24,7 @@ from urllib.request import HTTPRedirectHandler, build_opener, urlopen
 ROOT = Path(__file__).resolve().parents[1]
 WEIGHTS = dict(zip((f"R{i}" for i in range(1, 18)),
                    (3, 3, 2, 2, 3, 3, 4, 3, 2, 2, 2, 3, 2, 2, 1, 2, 1)))
+WEIGHTS["R53"] = 2
 NESTED = "ROYALE_RUBRIC_NESTED"
 
 
@@ -359,6 +360,36 @@ def budget_check(root):
         return row("R12", "fail", str(exc))
 
 
+def independent_plan_check(root, cost_fn=None):
+    """R53: recompute plan cost and quantity limits from the catalog without royale.budget's pricing."""
+    sys.path.insert(0, str(root))
+    from royale import budget
+    from royale.marts.q6_actions import proposed_plan
+    import pandas as pd
+    try:
+        data = pd.read_parquet(root / "marts/q6_actions.parquet")
+        catalog = data.loc[data.record_type == "catalog"].set_index("action_type_id")
+        plan = proposed_plan(data)
+        cents, qty = 0, {}
+        for line in plan:
+            r = catalog.loc[line.action_type_id]
+            cents += line.quantity * (int(r.unit_cost_cents) + int(r.recurring_cost_cents_per_day) * max(0, 30 - int(r.lead_days)))
+            qty[line.action_type_id] = qty.get(line.action_type_id, 0) + line.quantity
+        reported = (cost_fn or budget.plan_cost_usd)(data.loc[data.record_type == "catalog"], plan)
+        problems = []
+        if abs(cents / 100 - reported) > 0.005:
+            problems.append(f"independent cost ${cents / 100:,.2f} != budget.py ${reported:,.2f}")
+        if cents > 100_000 * 100:
+            problems.append("plan exceeds $100,000")
+        if len(set(qty) - {"A-HOLD"}) > 3:
+            problems.append("more than 3 action types")
+        problems += [f"{a}: {q} > quantity_limit" for a, q in qty.items() if q > int(catalog.loc[a, "quantity_limit"])]
+        return row("R53", "fail" if problems else "pass",
+                   {"independent_cost_usd": cents / 100, "budget_py_cost_usd": reported, "quantities": qty, "problems": problems})
+    except Exception as exc:
+        return row("R53", "fail", str(exc))
+
+
 def originality_check(root):
     findings = [p for p in (root / "findings").glob("*.md") if p.name != "README.md"]
     candidates = [p.name for p in findings if re.search(r"\bunexpected\b", p.read_text(), re.I)
@@ -394,7 +425,7 @@ def run_checks(root=ROOT, *, run_tests=True, url=None):
         row("R9", "manual", "Review uncertainty for every machine/group comparison and interactive state; keywords do not establish coverage or validity."),
         row("R10", "manual", "Audit money helpers, ratios of sums, dated placement joins and off-floor exclusions in every query; source mentions alone are insufficient."),
         row("R11", "manual", "Trace forecast feature provenance and availability dates, including indirect imports; banning words in model code would flag explanatory comments and miss leakage."),
-        budget_check(root), deliverables_check(root), deployment_check(root, url),
+        budget_check(root), independent_plan_check(root), deliverables_check(root), deployment_check(root, url),
         mart_and_tests_check(root, run_tests),
     ])
     chart_details = [{"page": p["page"], **p.get("charts", {"problems": [p.get("error", "No chart inspection")]})} for p in pages]
