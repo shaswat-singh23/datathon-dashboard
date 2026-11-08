@@ -6,7 +6,7 @@ import streamlit as st
 
 from royale.evidence import render_evidence
 from royale.filters import independent_scope_note
-from royale.theme import apply_theme
+from royale.theme import ADVERSE, PALETTE, apply_theme
 
 from royale import io
 from royale.marts.q4_players import MONEY, QUERY, monthly_summary, outcomes
@@ -67,9 +67,9 @@ st.caption("Rank separately by wager amount and loss each month within the selec
 month = st.selectbox("Concentration chart month", list(monthly.period_month))
 active = view[(view.period_month == month) & (view.tracked_coin_in_usd > 0)]
 fig = go.Figure()
-fig.add_trace(go.Scatter(x=[0, 1], y=[0, 1], name="Equal-share baseline", line=dict(dash="dash", color="#777777")))
-for label, values, color in [("Wagers", active.tracked_coin_in_usd, "#35665D"),
-                              ("Gross player losses", (-active.tracked_net_usd).clip(lower=0), "#A47734")]:
+fig.add_trace(go.Scatter(x=[0, 1], y=[0, 1], name="Equal-share baseline", line=dict(dash="dash", color=PALETTE[4])))
+for label, values, color in [("Wagers", active.tracked_coin_in_usd, PALETTE[0]),
+                              ("Gross player losses", (-active.tracked_net_usd).clip(lower=0), ADVERSE)]:
     ordered = np.sort(values.to_numpy())
     if len(ordered) and ordered.sum() > 0:
         cumulative = np.r_[0, ordered.cumsum() / ordered.sum()]
