@@ -4,11 +4,13 @@ import plotly.express as px
 import streamlit as st
 
 from royale.evidence import render_evidence
+from royale.theme import apply_theme
 from royale import io
 from royale.marts import q1_location as location
 from royale.marts.q1_machines import summarize
 
 st.set_page_config(page_title='Machines: The Gilded Ace', page_icon='♠', layout='wide')
+apply_theme("Machine performance")
 st.title('Which bottom-10 machines deserve a second look?')
 st.caption('Compare the manager’s raw house-win ranking with expected contribution per available hour.')
 try:

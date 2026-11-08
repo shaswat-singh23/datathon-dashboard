@@ -5,11 +5,13 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from royale.evidence import render_evidence
+from royale.theme import apply_theme
 
 from royale import io
 from royale.marts.q4_players import MONEY, QUERY, monthly_summary, outcomes
 
 st.set_page_config(page_title="Tracked players: The Gilded Ace", page_icon="♠", layout="wide")
+apply_theme("Player outcomes")
 st.title("What did tracked players wager, get back and net?")
 st.caption("Fictional casino, synthetic data. Carded play only: uncarded wagers and outcomes are invisible. "
            "Coin-in includes replayed winnings; it is not cash brought to the casino.")
@@ -63,8 +65,8 @@ month = st.selectbox("Concentration chart month", list(monthly.period_month))
 active = view[(view.period_month == month) & (view.tracked_coin_in_usd > 0)]
 fig = go.Figure()
 fig.add_trace(go.Scatter(x=[0, 1], y=[0, 1], name="Equal-share baseline", line=dict(dash="dash", color="#777777")))
-for label, values, color in [("Wagers", active.tracked_coin_in_usd, "#2a78d6"),
-                              ("Gross player losses", (-active.tracked_net_usd).clip(lower=0), "#eb6834")]:
+for label, values, color in [("Wagers", active.tracked_coin_in_usd, "#35665D"),
+                              ("Gross player losses", (-active.tracked_net_usd).clip(lower=0), "#A47734")]:
     ordered = np.sort(values.to_numpy())
     if len(ordered) and ordered.sum() > 0:
         cumulative = np.r_[0, ordered.cumsum() / ordered.sum()]

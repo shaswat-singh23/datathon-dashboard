@@ -1,0 +1,69 @@
+<style>
+:root { --ga-gold: #a47734; --ga-ink: #332d27; --ga-rule: #ded2c0; }
+[data-testid="stAppViewContainer"] { background: #f7f3eb; }
+[data-testid="stHeader"] { background: #f7f3ebed; }
+[data-testid="stMainBlockContainer"] { max-width: 1480px; padding: 4.5rem 3.5rem 4rem; }
+h1, h2, h3 { font-family: Georgia, 'Times New Roman', serif !important; font-weight: 400 !important; color: var(--ga-ink); }
+h1 { font-size: clamp(2rem, 3.1vw, 3.35rem) !important; letter-spacing: -.035em; line-height: 1.16 !important; max-width: 1050px; padding-top: .6rem !important; }
+h2 { font-size: 1.85rem !important; letter-spacing: -.025em; padding-top: 1.6rem !important; }
+h3 { font-size: 1.45rem !important; }
+[data-testid="stCaptionContainer"] { color: #71675b; line-height: 1.65; }
+.ga-smallcaps { font: 600 .64rem/1.6 Arial, sans-serif; letter-spacing: .19em; }
+.ga-masthead { display: flex; justify-content: space-between; gap: 1rem; align-items: center; min-height: 220px; padding: 2rem 2.5rem; margin-bottom: 1.2rem; background: radial-gradient(ellipse at 70% 0%, #b58d4930, transparent 65%), linear-gradient(115deg, #29241f, #182b25); color: #e7d7b9; border-top: 3px solid #af8b50; position: relative; overflow: hidden; }
+.ga-masthead::before { content: ''; position: absolute; inset: 15px 18px; background: radial-gradient(circle, #ffe6ab 1px, #d2a35566 2px, transparent 5px) left top / 24px 10px repeat-x, radial-gradient(circle, #ffe6ab 1px, #d2a35566 2px, transparent 5px) left bottom / 24px 10px repeat-x; pointer-events: none; }
+.ga-masthead::after { content: ''; position: absolute; inset: 7px; border: 1px solid #b08c4e40; pointer-events: none; }
+.ga-masthead-copy { position: relative; z-index: 1; flex: 1; min-width: 0; }
+.ga-section { font: 400 clamp(1.8rem, 2.6vw, 2.6rem)/1.2 Georgia, serif; color: #fff9ef; margin: .7rem 0 1rem; }
+.ga-edition { font: .58rem/1.8 Arial, sans-serif; letter-spacing: .15em; color: #c7b38b; }
+.ga-edition span { margin: 0 .65rem; color: #cda966; }
+.ga-casino-art { width: 45%; max-width: 420px; flex-shrink: 0; margin: -1.2rem -1rem -1.2rem 0; pointer-events: none; }
+.ga-casino-art img { display: block; width: 100%; height: auto; filter: drop-shadow(0 12px 12px #0004); }
+[data-testid="stSidebar"] { background: #29241f; border-right: 1px solid #8b7046; }
+[data-testid="stSidebarNav"] { display: none; }
+[data-testid="stSidebarUserContent"] { padding: 1.5rem 1.25rem; }
+.ga-brand { text-align: center; padding: .5rem 0 2rem; border-bottom: 1px solid #a88a554d; margin-bottom: 1.8rem; }
+.ga-crest { color: #e1c48c; font: 2.2rem Georgia, serif; width: 66px; height: 66px; line-height: 60px; border: 3px dashed #c2a36b; border-radius: 50%; outline: 1px solid #ad8e55; outline-offset: 5px; margin: 0 auto 1.5rem; background: radial-gradient(circle, #395247, #20332c); box-shadow: 0 0 28px #d7b67116, inset 0 0 0 5px #29241f, inset 0 0 0 6px #ad8e5566; }
+.ga-suits { color: #cdb17b; font-size: .95rem; letter-spacing: .6em; margin-top: 1rem; padding-left: .6em; }
+.ga-suits span { color: #c28e7c; }
+.ga-brand-name { color: #fff7e9; font: 1.8rem/1.4 Georgia, serif; margin-bottom: .5rem; }
+.ga-brand .ga-smallcaps { font-size: .53rem; color: #c5b391; letter-spacing: .13em; }
+.ga-nav-label { font: 600 .59rem Arial, sans-serif; letter-spacing: .18em; color: #c7ae83; margin: 0 0 .65rem .65rem; }
+[data-testid="stSidebar"] [data-testid="stPageLink-NavLink"] { padding: .7rem .8rem; border-radius: 2px; border-left: 2px solid transparent; }
+[data-testid="stSidebar"] [data-testid="stPageLink-NavLink"] p { font-size: .86rem; color: #e8ddcd; }
+[data-testid="stSidebar"] [data-testid="stPageLink-NavLink"]:hover { background: #ffffff0c; border-left-color: #c1a16a; }
+[data-testid="stSidebar"] [data-testid="stPageLink-NavLink"][aria-current="page"] { background: #b99b6824; border-left-color: #d3b67d; }
+.ga-sidebar-note { margin: 2.3rem .65rem 0; color: #cfbea4; font-size: .78rem; line-height: 1.8; }
+.ga-sidebar-note hr { border: 0; border-top: 1px solid #a88a554d; margin: 1.5rem 0; }
+.ga-sidebar-note small { color: #b6a895; font-size: .69rem; }
+[data-testid="stMetric"] { background: #fffcf7; border: 1px solid var(--ga-rule); border-top: 2px solid #b39259; padding: 1.1rem 1.15rem; border-radius: 3px; min-height: 126px; box-shadow: 0 4px 12px #332d2703; }
+[data-testid="stMetricLabel"] { color: #716350; }
+[data-testid="stMetricLabel"] p { font-size: .75rem; letter-spacing: .025em; }
+[data-testid="stMetricValue"] { font-family: Georgia, serif; font-weight: 400; }
+[data-testid="stMetricValue"] > div { font-size: clamp(1.25rem, 2.1vw, 2.2rem); white-space: normal; overflow-wrap: anywhere; }
+[data-testid="stMain"] [data-testid="stPageLink"] { background: #fffcf7; border: 1px solid var(--ga-rule); border-radius: 3px; padding: .65rem .8rem; }
+[data-testid="stMain"] [data-testid="stPageLink"]:hover { border-color: var(--ga-gold); }
+[data-testid="stMain"] [data-testid="stPageLink"] p { font-size: .84rem; }
+[data-testid="stMain"] [data-testid="stPageLink"] { width: 100%; }
+[data-testid="stPlotlyChart"], [data-testid="stArrowVegaLiteChart"] { background: #fffcf7; border: 1px solid #e4dacc; border-radius: 4px; padding: .6rem; }
+[data-testid="stDataFrame"] { border: 1px solid var(--ga-rule); border-radius: 3px; }
+[data-testid="stExpander"] { background: #fffcf7; border-radius: 3px; }
+[data-testid="stExpander"] details { border-color: var(--ga-rule); }
+[data-testid="stAlert"] { border-radius: 3px; }
+[data-testid="stAlertContainer"]:has([data-testid="stAlertContentInfo"]) { background: #eee7d8; color: #54432c; border-left: 3px solid #a47734; }
+[data-testid="stAlertContentInfo"] { color: #54432c; }
+[data-testid="stWidgetLabel"] p { font-size: .82rem; font-weight: 500; }
+button:focus-visible, a:focus-visible { outline: 2px solid #a47734 !important; outline-offset: 3px; }
+@media (max-width: 900px) {
+  [data-testid="stMainBlockContainer"] { padding: 4.5rem 1.25rem 3rem; }
+  .ga-masthead { padding: 1.8rem; min-height: 190px; }
+  .ga-section { font-size: 1.5rem; }
+}
+@media (max-width: 600px) {
+  .ga-masthead { display: block; padding: 2rem 1.5rem 1rem; }
+  .ga-edition { font-size: .52rem; }
+  .ga-casino-art { width: 100%; max-width: 300px; margin: .2rem auto 0; }
+  h1 { font-size: 2rem !important; }
+  [data-testid="stMetric"] { min-height: 105px; }
+  [data-testid="stMetricValue"] > div { font-size: 1.9rem; }
+}
+</style>

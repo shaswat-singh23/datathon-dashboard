@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 250" fill="none" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="ga-brass" x1="100" y1="30" x2="350" y2="230" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FAE1A1"/><stop offset=".45" stop-color="#AF823E"/><stop offset=".7" stop-color="#E5C47F"/><stop offset="1" stop-color="#77542B"/>
+    </linearGradient>
+    <linearGradient id="ga-paper" x1="0" y1="0" x2="100" y2="160" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFBEE"/><stop offset="1" stop-color="#D9C8A7"/>
+    </linearGradient>
+    <radialGradient id="ga-halo"><stop stop-color="#E9BD68" stop-opacity=".22"/><stop offset="1" stop-color="#E9BD68" stop-opacity="0"/></radialGradient>
+    <radialGradient id="ga-hub"><stop stop-color="#FFEAC0"/><stop offset=".4" stop-color="#C09B57"/><stop offset="1" stop-color="#684A28"/></radialGradient>
+    <pattern id="ga-cardback" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M5 0 10 5 5 10 0 5Z" stroke="#E0BA7B" stroke-width=".7"/></pattern>
+  </defs>
+  <ellipse cx="285" cy="126" rx="215" ry="124" fill="url(#ga-halo)"/>
+  <!-- Brass roulette wheel, with engraved pockets and an ivory ball. -->
+  <g transform="translate(325 118) rotate(-12)">
+    <circle r="103" fill="#171E1A" stroke="url(#ga-brass)" stroke-width="7"/>
+    <circle r="95" stroke="#B58C50" stroke-width="1"/>
+    <circle r="80" stroke="#783D39" stroke-width="23"/>
+    <circle r="80" stroke="#202B26" stroke-width="23" stroke-dasharray="20.94 20.94"/>
+    <path d="M-11-92 11-92 8-69-8-69Z" fill="#437868"/>
+    <circle r="67" stroke="#D3AD6C" stroke-width="2"/>
+    <circle r="60" fill="#65472D" stroke="#B48A4D" stroke-width="1"/>
+    <circle r="52" fill="#302B21" stroke="#9F7E48" stroke-width="1"/>
+    <g stroke="#D7B473" stroke-opacity=".6">
+      <path d="M0-93V-68 M0 68V93 M-93 0H-68 M68 0H93"/>
+      <path d="M0-93V-68 M0 68V93 M-93 0H-68 M68 0H93" transform="rotate(15)"/>
+      <path d="M0-93V-68 M0 68V93 M-93 0H-68 M68 0H93" transform="rotate(30)"/>
+      <path d="M0-93V-68 M0 68V93 M-93 0H-68 M68 0H93" transform="rotate(45)"/>
+      <path d="M0-93V-68 M0 68V93 M-93 0H-68 M68 0H93" transform="rotate(60)"/>
+      <path d="M0-93V-68 M0 68V93 M-93 0H-68 M68 0H93" transform="rotate(75)"/>
+    </g>
+    <g fill="#E7CCA0" font-family="Georgia,serif" font-size="9" text-anchor="middle">
+      <text y="-78">0</text><text x="40" y="-65">32</text><text x="69" y="-36">15</text>
+      <text x="82" y="4">19</text><text x="70" y="44">4</text><text x="41" y="73">21</text>
+      <text y="85">2</text><text x="-41" y="73">25</text><text x="-70" y="44">17</text>
+      <text x="-82" y="4">34</text><text x="-69" y="-36">6</text><text x="-40" y="-65">27</text>
+    </g>
+    <path d="M0-45V45 M-45 0H45" stroke="url(#ga-brass)" stroke-width="7" stroke-linecap="round" transform="rotate(32)"/>
+    <circle r="16" fill="url(#ga-hub)"/><circle r="6" fill="#F2D89C"/>
+    <circle cx="58" cy="-76" r="5" fill="#FFF4D6"/><circle cx="57" cy="-77" r="2" fill="#FFFFFF"/>
+  </g>
+  <!-- A fan of engraved, ivory playing cards. -->
+  <g transform="translate(100 52) rotate(-18 48 76)">
+    <rect x="3" y="5" width="91" height="142" rx="7" fill="#000" opacity=".25"/>
+    <rect width="91" height="142" rx="7" fill="url(#ga-paper)" stroke="#C5A56C"/>
+    <rect x="7" y="7" width="77" height="128" rx="3" fill="#6A3438" stroke="#B08A51"/>
+    <rect x="11" y="11" width="69" height="120" fill="url(#ga-cardback)"/>
+    <path d="m45 42 21 29-21 29-21-29Z" fill="#743C3F" stroke="#E0BA7B"/>
+    <text x="45" y="80" text-anchor="middle" fill="#E7C98D" font-size="28" font-family="Georgia,serif">♠</text>
+  </g>
+  <g transform="translate(143 46) rotate(7 46 71)">
+    <rect x="4" y="6" width="91" height="142" rx="7" fill="#000" opacity=".25"/>
+    <rect width="91" height="142" rx="7" fill="url(#ga-paper)" stroke="#C5A56C"/>
+    <rect x="6" y="6" width="79" height="130" rx="3" stroke="#A58A61" stroke-opacity=".45"/>
+    <g fill="#263E34" font-family="Georgia,serif"><text x="13" y="29" font-size="23">A</text><text x="14" y="48" font-size="20">♠</text><text x="45" y="96" text-anchor="middle" font-size="65">♠</text></g>
+    <g transform="translate(91 142) rotate(180)" fill="#263E34" font-family="Georgia,serif"><text x="13" y="29" font-size="23">A</text><text x="14" y="48" font-size="20">♠</text></g>
+  </g>
+  <!-- Two chip stacks and a face-up chip. -->
+  <g stroke="#CEAD70" stroke-width="1.2">
+    <g fill="#6C3638">
+      <path d="M237 199v19c0 14 80 14 80 0v-19Z"/>
+      <ellipse cx="277" cy="199" rx="40" ry="12"/>
+      <path d="M237 206c0 14 80 14 80 0 M237 212c0 14 80 14 80 0"/>
+    </g>
+    <g fill="#294F46">
+      <path d="M300 179v36c0 14 80 14 80 0v-36Z"/>
+      <path d="M300 187c0 14 80 14 80 0 M300 194c0 14 80 14 80 0 M300 201c0 14 80 14 80 0 M300 208c0 14 80 14 80 0"/>
+      <ellipse cx="340" cy="179" rx="40" ry="12"/>
+      <ellipse cx="340" cy="179" rx="27" ry="7" stroke-dasharray="4 3"/>
+    </g>
+  </g>
+  <g transform="translate(386 208) rotate(-20)">
+    <ellipse rx="37" ry="20" fill="#B78C4D" stroke="#F0D499" stroke-width="2"/>
+    <ellipse rx="30" ry="16" stroke="#F7E4BA" stroke-width="4" stroke-dasharray="7 9"/>
+    <ellipse rx="23" ry="12" fill="#3A3024" stroke="#E7C78A"/>
+    <text text-anchor="middle" y="5" fill="#F1D79E" font-size="14" font-family="Georgia,serif">♠</text>
+  </g>
+  <!-- Polished dice with individually drawn pips. -->
+  <g transform="translate(87 187) rotate(-16)">
+    <path d="M0 0 15-10 57-10 42 0Z" fill="#FFF8E3" stroke="#BDA47A"/>
+    <path d="M42 0 57-10v43L42 43Z" fill="#B59B74" stroke="#BDA47A"/>
+    <rect width="42" height="43" rx="5" fill="url(#ga-paper)" stroke="#BDA47A"/>
+    <g fill="#40372D"><circle cx="11" cy="11" r="3"/><circle cx="31" cy="11" r="3"/><circle cx="21" cy="22" r="3"/><circle cx="11" cy="33" r="3"/><circle cx="31" cy="33" r="3"/></g>
+    <ellipse cx="29" cy="-5" rx="3" ry="1.6" fill="#40372D"/>
+  </g>
+  <g transform="translate(161 185) rotate(16)">
+    <rect width="41" height="41" rx="6" fill="#773B3D" stroke="#D5AA78"/>
+    <rect x="4" y="4" width="33" height="33" rx="4" stroke="#E7BC83" stroke-opacity=".3"/>
+    <g fill="#F5DFB5"><circle cx="11" cy="11" r="3"/><circle cx="30" cy="11" r="3"/><circle cx="11" cy="30" r="3"/><circle cx="30" cy="30" r="3"/></g>
+  </g>
+  <g stroke="#DABD7D" stroke-linecap="round"><path d="M64 61v14 M57 68h14 M449 162v14 M442 169h14"/><path d="M72 60v4 M70 62h4 M433 45v8 M429 49h8" opacity=".5"/></g>
+</svg>

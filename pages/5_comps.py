@@ -4,10 +4,12 @@ import plotly.express as px
 import streamlit as st
 
 from royale.evidence import render_evidence
+from royale.theme import apply_theme
 
 from royale import io, money
 
 st.set_page_config(page_title="Comps: The Gilded Ace", page_icon="♠", layout="wide")
+apply_theme("Loyalty & comps")
 st.title("What did the loyalty program cost, and what changed?")
 st.caption("Monthly tracked guest activity and property totals. Comp cost is already inside POS cost of goods; do not subtract it again. Face value is menu value, not cash revenue.")
 
