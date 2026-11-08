@@ -165,3 +165,8 @@ def test_checker_cli_writes_complete_report_without_raw_data(tmp_path):
     # Every route must have actually been attempted, even if its app crashed.
     assert len(rows[0]["details"]) == 1 + len(list((ROOT / "pages").glob("*.py")))
     assert not any(p["details"] == "" for p in rows[0]["details"])
+
+
+def test_dangling_finding_link_is_reported():
+    traces = [{"text": "[a](https://x/blob/master/findings/22-machines.md) [b](findings/999-nope.md)"}]
+    assert rubric.dangling_finding_links(traces) == ["999-nope.md"]

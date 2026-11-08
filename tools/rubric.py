@@ -344,6 +344,12 @@ def originality_check(root):
                {"candidates": candidates, "details": "Review whether the result is unexpected; marker plus reproduction heading alone is insufficient."})
 
 
+def dangling_finding_links(traces, root=ROOT):
+    """Findings files named in trace text that do not exist under root/findings."""
+    names = {m for t in traces for m in re.findall(r"findings/([^\s)\]]+\.md)", t["text"])}
+    return sorted(n for n in names if not (Path(root) / "findings" / n).is_file())
+
+
 def run_checks(root=ROOT, *, run_tests=True, url=None):
     pages = page_checks(root)
     rows = [page_row("R1", pages, lambda p: ("pass" if p["seconds"] < 5 else "fail",
@@ -362,9 +368,10 @@ def run_checks(root=ROOT, *, run_tests=True, url=None):
     actions = next((p for p in pages if p["page"] == "pages/6_actions.py"), {})
     traces = actions.get("traces", [])
     trace_ok = (traces and not actions.get("error") and
-                all(t["pages"] and re.search(r"findings/[^\s)]+\.md", t["text"]) for t in traces))
+                all(t["pages"] and re.search(r"findings/[^\s)]+\.md", t["text"]) for t in traces)
+                and not dangling_finding_links(traces, root))
     rows.append(row("R6", "manual" if trace_ok else "fail",
-                    {"traces": traces, "details": "Trace expanders checked for page and finding links; review coverage of every recommendation and alternative drill."}))
+                    {"traces": traces, "dangling_links": dangling_finding_links(traces, root), "details": "Trace expanders checked for page and finding links; review coverage of every recommendation and alternative drill."}))
     rows.extend([
         row("R7", "manual", "Requires claim-by-claim numeric reconciliation with independently checked findings; digit or filename matching cannot prove this."),
         appendix_check(root),
