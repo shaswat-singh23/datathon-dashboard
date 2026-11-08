@@ -9,15 +9,16 @@ import streamlit as st
 
 from royale.evidence import render_evidence
 from royale.filters import analysis_period, describe_period
-from royale.theme import apply_theme
+from royale.theme import ADVERSE, PALETTE, apply_theme
 
 from royale import io
 
 st.set_page_config(page_title="Downtime: The Gilded Ace", page_icon="♠", layout="wide")
 apply_theme("Availability & downtime", compact=True)
 
-BLUE = "#35665D"    # series 1
-ORANGE = "#A47734"  # series 2 (only where a second part is needed)
+LOST = ADVERSE        # lost machine-hours: an adverse outcome
+PRIMARY = PALETTE[0]  # series 1
+COMPARE = PALETTE[2]  # series 2 (only where a second part is needed)
 SHIFTS = ["day", "swing", "grave"]
 SHIFT_LABEL = {"day": "Day (06-14)", "swing": "Swing (14-22)", "grave": "Grave (22-06)"}
 
@@ -108,7 +109,7 @@ k5.metric("Fault tickets", f"{len(faults):,}",
 # ---- When it happened ------------------------------------------------------------------
 st.subheader(f"When it happened: lost machine-hours per day, {scope_name}")
 daily = md.groupby("gaming_date", as_index=False).agg(lost_h=("lost_h", "sum"))
-fig = go.Figure(go.Bar(x=daily["gaming_date"], y=daily["lost_h"], marker_color=BLUE, marker_line_width=0,
+fig = go.Figure(go.Bar(x=daily["gaming_date"], y=daily["lost_h"], marker_color=LOST, marker_line_width=0,
                        hovertemplate="%{x|%a %b %d}: %{y:,.1f} lost hrs<extra></extra>"))
 st.plotly_chart(style(fig, 260).update_layout(bargap=0.15), width="stretch")
 
@@ -117,7 +118,7 @@ left, right = st.columns(2)
 with left:
     st.subheader("By month")
     mo = group_table(md, "month")
-    f2 = go.Figure(go.Bar(x=mo.index, y=mo["lost_h"], marker_color=BLUE, marker_line_width=0,
+    f2 = go.Figure(go.Bar(x=mo.index, y=mo["lost_h"], marker_color=LOST, marker_line_width=0,
                           customdata=mo[["lost_share", "lost_coin_in"]],
                           hovertemplate="%{x}: %{y:,.0f} lost hrs (%{customdata[0]:.2%} of scheduled), "
                                         "est. lost coin-in $%{customdata[1]:,.0f}<extra></extra>"))
@@ -126,7 +127,7 @@ with left:
 with right:
     st.subheader("By manufacturer")
     mf = group_table(md, "manufacturer").sort_values("lost_share")
-    f3 = go.Figure(go.Bar(y=mf.index, x=mf["lost_share"], orientation="h", marker_color=BLUE,
+    f3 = go.Figure(go.Bar(y=mf.index, x=mf["lost_share"], orientation="h", marker_color=LOST,
                           marker_line_width=0, text=[f"{v:.2%}" for v in mf["lost_share"]],
                           textposition="outside", cliponaxis=False,
                           customdata=mf[["lost_h", "machines", "lost_h_per_machine"]],
@@ -173,9 +174,9 @@ else:
         sh = sh.dropna(subset=["n"])
         labels = [SHIFT_LABEL[s] for s in sh.index]
         f4 = go.Figure()
-        f4.add_bar(x=labels, y=sh["wait"], name="Wait for tech", marker_color=ORANGE, marker_line_width=0,
+        f4.add_bar(x=labels, y=sh["wait"], name="Wait for tech", marker_color=COMPARE, marker_line_width=0,
                    customdata=sh["n"], hovertemplate="%{x}: wait %{y:.2f} h (n=%{customdata:,})<extra></extra>")
-        f4.add_bar(x=labels, y=sh["fix"], name="Fix", marker_color=BLUE, marker_line_width=0,
+        f4.add_bar(x=labels, y=sh["fix"], name="Fix", marker_color=PRIMARY, marker_line_width=0,
                    customdata=sh["n"], hovertemplate="%{x}: fix %{y:.2f} h (n=%{customdata:,})<extra></extra>")
         st.plotly_chart(style(f4, 280, ".1f").update_layout(barmode="stack", bargap=0.4), width="stretch")
         st.caption("Wait = opened_at to work_started_at; fix = work_started_at to available_at. "
@@ -185,7 +186,7 @@ else:
         hr = (faults.groupby("opened_hour_local").agg(median=("response_h", "median"), n=("operation_id", "count"))
               .reindex(range(24)))
         f5 = go.Figure(go.Scatter(x=hr.index, y=hr["median"], mode="lines+markers",
-                                  line=dict(color=BLUE, width=2), marker=dict(size=8), customdata=hr["n"],
+                                  line=dict(color=PRIMARY, width=2), marker=dict(size=8), customdata=hr["n"],
                                   hovertemplate="%{x}:00: median %{y:.1f} h (n=%{customdata})<extra></extra>"))
         f5.update_xaxes(tickmode="array", tickvals=list(range(0, 24, 3)),
                         ticktext=[f"{h:02d}:00" for h in range(0, 24, 3)])

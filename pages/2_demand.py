@@ -8,7 +8,7 @@ import streamlit as st
 
 from royale.evidence import render_evidence
 from royale.filters import analysis_period, describe_period
-from royale.theme import apply_theme
+from royale.theme import IVORY, PALETTE, apply_theme
 
 from royale import io, visuals
 from royale.demand import event_comparison, traffic_summary
@@ -16,11 +16,11 @@ from royale.demand import event_comparison, traffic_summary
 st.set_page_config(page_title="Demand: The Gilded Ace", page_icon="♠", layout="wide")
 apply_theme("Floor demand", compact=True)
 
-BLUE = "#35665D"      # series 1: the selected zone / the floor
-ORANGE = "#A47734"    # series 2: comparison (rest of floor)
+PRIMARY = PALETTE[0]  # series 1: the selected zone / the floor
+COMPARE = PALETTE[2]  # series 2: comparison (rest of floor)
 EVENT_FILL = "rgba(82, 81, 78, 0.12)"
-CLOSURE_FILL = "rgba(164, 119, 52, 0.14)"
-SEQ_SCALE = [[0, "#F3EDDF"], [1, "#35665D"]]  # one hue, light to dark
+CLOSURE_FILL = "rgba(138, 90, 28, 0.14)"  # PALETTE[2] at low opacity
+SEQ_SCALE = [[0, IVORY], [1, PALETTE[0]]]  # one hue, light ivory to dark
 
 
 def ratio(num: pd.Series, den: pd.Series) -> float:
@@ -160,7 +160,7 @@ else:
           .groupby("week", as_index=False).agg(coin_in_usd=("coin_in_usd", "mean"), n=("coin_in_usd", "size"))
           .rename(columns={"week": "gaming_date"}))
     hover = "Week of %{x|%b %d}: $%{y:,.0f}/day<extra></extra>"
-fig = go.Figure(go.Scatter(x=tr["gaming_date"], y=tr["coin_in_usd"], mode="lines", line=dict(color=BLUE, width=2),
+fig = go.Figure(go.Scatter(x=tr["gaming_date"], y=tr["coin_in_usd"], mode="lines", line=dict(color=PRIMARY, width=2),
                            name="Coin-in", hovertemplate=hover))
 shade(fig, view)
 st.plotly_chart(style(fig), width="stretch")
@@ -213,7 +213,7 @@ order = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 wd = plain.groupby("local_weekday")["coin_in_usd"].mean().reindex(order)
 with left:
     st.subheader("Weekday rhythm (non-event days)")
-    f2 = go.Figure(go.Bar(x=wd.index, y=wd.values, marker_color=BLUE, marker_line_width=0,
+    f2 = go.Figure(go.Bar(x=wd.index, y=wd.values, marker_color=PRIMARY, marker_line_width=0,
                           hovertemplate="%{x}: $%{y:,.0f}/day<extra></extra>"))
     st.plotly_chart(style(f2, 280).update_layout(hovermode="closest", bargap=0.35), width="stretch")
 
@@ -257,11 +257,11 @@ if zone != "All zones":
 
     wz, wr = weekly(z_in), weekly(z_out)
     f3 = go.Figure()
-    f3.add_scatter(x=wz.index, y=wz["cpah"], name=zone_label[zone], line=dict(color=BLUE, width=2),
+    f3.add_scatter(x=wz.index, y=wz["cpah"], name=zone_label[zone], line=dict(color=PRIMARY, width=2),
                    hovertemplate="%{y:$,.1f}")
-    f3.add_scatter(x=wr.index, y=wr["cpah"], name="Rest of floor", line=dict(color=ORANGE, width=2),
+    f3.add_scatter(x=wr.index, y=wr["cpah"], name="Rest of floor", line=dict(color=COMPARE, width=2),
                    hovertemplate="%{y:$,.1f}")
-    for s, color in ((wz, BLUE), (wr, ORANGE)):
+    for s, color in ((wz, PRIMARY), (wr, COMPARE)):
         f3.add_annotation(x=s.index[-1], y=s["cpah"].iloc[-1], xanchor="left", showarrow=False,
                           text=f" {zone_label[zone] if s is wz else 'Rest of floor'}", font=dict(size=11))
     shade(f3, view)
@@ -302,9 +302,9 @@ else:
                                   "visitors_per_calendar_day": "LVCVA visitors / calendar day (monthly mean)"}[x])
         cf = go.Figure()
         cf.add_scatter(x=context["gaming_date"], y=context["coin_in_usd"], name="Whole-floor coin-in",
-                       line=dict(color=BLUE), hovertemplate="$%{y:,.0f}")
+                       line=dict(color=PRIMARY), hovertemplate="$%{y:,.0f}")
         cf.add_scatter(x=context["gaming_date"], y=context[metric], name=metric,
-                       yaxis="y2", line=dict(color=ORANGE), connectgaps=False)
+                       yaxis="y2", line=dict(color=COMPARE), connectgaps=False)
         cf = style(cf, 340)
         cf.update_layout(yaxis=dict(title="Coin-in ($)"),
                          yaxis2=dict(title={"tmax_c": "Temperature (°C)", "prcp_mm": "Rain (mm)",
