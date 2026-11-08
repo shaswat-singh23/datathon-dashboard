@@ -35,7 +35,7 @@ For the Python 3.12 run: `UV_PROJECT_ENVIRONMENT=/tmp/venv312 uv sync --locked -
 
 ## Live URL
 
-- Public URL: PENDING (fill in after the click-through below; also fill the "Live dashboard" line in README.md)
+- Public URL: https://datathon-dashboard-o5xb3rbuuqzppphcqeglmq.streamlit.app/ (deployed from `master`, `app.py`; first linked in PR #71, live by 22:42 UTC). Anonymous `curl -L` with a cookie jar: HTTP 200 after 3 redirects, Community Cloud app shell.
 - First deploy verified in a private window: PENDING
 - Redeploy on push to master confirmed: PENDING
 
