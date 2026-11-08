@@ -5,7 +5,7 @@ import streamlit as st
 from royale.evidence import render_evidence
 from royale.theme import apply_theme
 
-from royale import budget, config, io
+from royale import budget, config, io, visuals
 from royale.marts.q6_actions import assess, proposed_plan
 
 REPO = "https://github.com/shaswat-singh23/datathon-dashboard/blob/master/"
@@ -76,35 +76,63 @@ options, evidence = assess(data, start, end)
 st.caption("This filter recalculates supporting rates and alternative scenarios. The July plan, its targets, "
            "and its prices remain based on the complete January–June record. Short windows are noisy.")
 st.subheader("Tradeoffs against preserving the budget")
-st.write("Maintenance and staffing: base assumes 50% of historical downtime or waiting can be removed; "
-         "low/high assumes 0%/100%. These are decision scenarios, not measured intervention effects or "
-         "confidence intervals. Recoveries use only operating days after lead time and historical theo "
-         "per available hour. Guests switching machines can reduce the property benefit.")
-cols = ["action", "targets", "cost_usd", "base_theo_usd", "low_theo_usd", "high_theo_usd", "net_usd"]
-st.dataframe(options[cols], hide_index=True, width="stretch", column_config={
-    "action": "Option", "targets": "Targets", "cost_usd": st.column_config.NumberColumn("Spend", format="$%.0f"),
-    "base_theo_usd": st.column_config.NumberColumn("Incremental theo, base", format="$%.0f"),
-    "low_theo_usd": st.column_config.NumberColumn("Theo, low", format="$%.0f"),
-    "high_theo_usd": st.column_config.NumberColumn("Theo, high", format="$%.0f"),
-    "net_usd": st.column_config.NumberColumn("Base theo less spend", format="$%.0f"),
-})
-st.caption("Incremental theo includes implementation downtime. Theo less spend excludes taxes, lease-share "
-           "changes and other operating-cost changes; it is not a full-profit estimate. Inspection's low/high "
-           "uses two hours at the target's 90th-percentile historical daily rate / zero displacement. "
-           "Quiet-hour scheduling is not assumed to eliminate opportunity cost in the base case.")
+costs = visuals.cost_comparison(options, catalog, manager_ids)
+st.plotly_chart(visuals.cost_chart(costs), width="stretch")
+st.caption("Catalogue spend for July 1–30, priced with royale.budget: quantity × (unit cost + daily cost × "
+           "operating days after lead time). Grey bars are the manager's ten-machine replacement baseline, "
+           "shown for scale and not funded. Spend does not depend on the evidence period.")
+cards = visuals.action_cards(options, catalog, evidence, plan)
+for column, card in zip(st.columns(len(cards)), cards):
+    with column.container(border=True):
+        st.markdown(f"**{card['title']}**")
+        st.markdown(f"Spend: **${card['spend_usd']:,.0f}**  \n"
+                    f"Lead time: {card['lead_days']} day{'s' if card['lead_days'] != 1 else ''}  \n"
+                    f"Downtime: {card['downtime']}  \n"
+                    f"Assumed benefit: {card['benefit']}  \n"
+                    f"**Decision:** {card['decision']}")
+st.caption("Card downtime and scenario benefits use the evidence period above; implementation downtime is "
+           "valued at historical theo per available hour. Preserve funds is the zero-cost baseline.")
 
-st.subheader("If the assumed recovery halves")
-st.dataframe(options[["action", "net_usd", "rank_base", "half_net_usd", "rank_half"]],
-             hide_index=True, width="stretch", column_config={
-                 "action": "Option", "net_usd": st.column_config.NumberColumn("Base theo less spend", format="$%.0f"),
-                 "rank_base": "Base rank", "half_net_usd": st.column_config.NumberColumn("Halved recovery less spend", format="$%.0f"),
-                 "rank_half": "Halved rank",
+st.subheader("Assumed-recovery scenarios: maintenance and staffing only")
+st.write("What if 0%, 25%, 50% or 100% of historical downtime (maintenance) or grave-shift waiting "
+         "(staffing) were recovered in July? These are decision scenarios, not measured intervention effects "
+         "or confidence intervals. Recoveries use only operating days after lead time and historical theo "
+         "per available hour. Guests switching machines can reduce the property benefit. Inspection is excluded: "
+         "it buys information and is never assigned hypothetical revenue.")
+scenarios = visuals.recovery_scenarios(options)
+st.plotly_chart(visuals.scenario_chart(scenarios), width="stretch")
+st.dataframe(scenarios[["option", "assumed_recovery", "spend_usd", "implementation_theo_usd",
+                        "incremental_theo_usd", "theo_less_spend_usd"]], hide_index=True, width="stretch",
+             column_config={
+                 "option": "Option (scenario)",
+                 "assumed_recovery": st.column_config.NumberColumn("Assumed recovery", format="percent"),
+                 "spend_usd": st.column_config.NumberColumn("Spend", format="dollar"),
+                 "implementation_theo_usd": st.column_config.NumberColumn("Implementation downtime theo", format="dollar"),
+                 "incremental_theo_usd": st.column_config.NumberColumn("Incremental theo", format="dollar"),
+                 "theo_less_spend_usd": st.column_config.NumberColumn("Theo less spend", format="dollar"),
              })
+st.caption("Spend and implementation downtime remain at every recovery level, including 0%. 50% is the base "
+           "case and 25% the halved case used in the ranking check below. Theo less spend excludes taxes, "
+           "lease-share changes and other operating-cost changes; it is not a full-profit estimate.")
 changed = options[options.rank_base != options.rank_half]
-st.write("The ranking is unchanged when assumed positive recovery halves." if changed.empty else
-         "Ranking changes: " + "; ".join(f"{r.action}: {r.rank_base} → {r.rank_half}" for r in changed.itertuples()))
-st.caption("Halving applies to the assumed 50% recovery (becoming 25%); fixed spend and implementation "
-           "downtime remain. Inspection has no positive recovery to halve.")
+st.write("The option ranking is unchanged when assumed positive recovery halves (50% → 25%)." if changed.empty else
+         "Ranking changes when recovery halves: "
+         + "; ".join(f"{r.action}: {r.rank_base} → {r.rank_half}" for r in changed.itertuples()))
+with st.expander("Exact values: all options, base/low/high and halved-recovery ranking"):
+    cols = ["action", "targets", "cost_usd", "base_theo_usd", "low_theo_usd", "high_theo_usd", "net_usd",
+            "half_net_usd", "rank_base", "rank_half"]
+    st.dataframe(options[cols], hide_index=True, width="stretch", column_config={
+        "action": "Option", "targets": "Targets", "cost_usd": st.column_config.NumberColumn("Spend", format="$%.0f"),
+        "base_theo_usd": st.column_config.NumberColumn("Incremental theo, base (50%)", format="$%.0f"),
+        "low_theo_usd": st.column_config.NumberColumn("Theo, low", format="$%.0f"),
+        "high_theo_usd": st.column_config.NumberColumn("Theo, high", format="$%.0f"),
+        "net_usd": st.column_config.NumberColumn("Base theo less spend", format="$%.0f"),
+        "half_net_usd": st.column_config.NumberColumn("Halved recovery less spend", format="$%.0f"),
+        "rank_base": "Base rank", "rank_half": "Halved rank",
+    })
+    st.caption("Incremental theo includes implementation downtime. Inspection's low/high uses two hours at the "
+               "target's 90th-percentile historical daily rate / zero displacement. Quiet-hour scheduling is "
+               "not assumed to eliminate opportunity cost in the base case.")
 
 action = st.selectbox("Action drill", options.action_type_id.tolist(),
                       format_func=lambda a: options.set_index("action_type_id").loc[a, "action"])

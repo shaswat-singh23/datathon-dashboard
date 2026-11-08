@@ -2,13 +2,12 @@
 import calendar
 
 import pandas as pd
-import plotly.graph_objects as go
 import streamlit as st
 
 from royale.evidence import render_evidence
 from royale.theme import apply_theme
 
-from royale import io
+from royale import io, visuals
 from royale.model import FITTED_KIND, KINDS, LABELS, score_forecasts
 from royale.overview import weekday_profile
 from royale.planning import evaluate_planning
@@ -24,19 +23,37 @@ except FileNotFoundError as err:
     st.stop()
 data['gaming_date'] = pd.to_datetime(data.gaming_date)
 
-st.subheader('Validation: earlier months train, later months test')
-st.markdown('**Training:** January 1–April 30, 2025 (120 days). **Held-out test:** May 1–June 30, 2025 (61 days). '
-            'Each forecast is fitted once on the training period, then frozen for the entire test horizon. '
-            'Inputs are the gaming date’s weekday and, for the trend model, elapsed calendar days. '
-            'No test-day results, lagged holdout outcomes, later-published tourism, surveys, or future repairs are used.')
-st.markdown('**Constant baseline:** the mean daily coin-in during training. **Weekday baseline:** the training mean for each weekday. '
-            '**Fitted regression (weekday + linear trend):** seven weekday intercepts and one shared linear time slope, fitted by least squares. '
-            'Negative predictions are clipped to zero. These specifications are fixed; no hyperparameters are selected using the test period.')
+full_scores = score_forecasts(data)
+winner = full_scores.idxmin()
+if winner == 'weekday':
+    st.subheader('Result: the simple weekday average forecast best')
+    st.markdown(f'On the held-out May–June days, the **weekday-mean baseline** had the lowest error: '
+                f'**${full_scores["weekday"]:,.0f}/day** mean absolute error, versus '
+                f'${full_scores[FITTED_KIND]:,.0f}/day for the fitted weekday + trend regression and '
+                f'${full_scores["constant"]:,.0f}/day for the constant training mean. '
+                'The fitted model did not beat the simpler seasonal baseline.')
+else:
+    st.subheader(f'Result: {LABELS[winner]} forecast best')
+    st.markdown(f'On the held-out May–June days, **{LABELS[winner]}** had the lowest error '
+                f'(${full_scores[winner]:,.0f}/day MAE); the weekday-mean baseline scored '
+                f'${full_scores["weekday"]:,.0f}/day.')
+st.plotly_chart(visuals.mae_chart(visuals.mae_table(full_scores, LABELS)), width='stretch')
+lead_planning, _ = evaluate_planning(data, 2)
+if not lead_planning.empty and 'weekday' in set(lead_planning.kind):
+    lead_row = lead_planning.set_index('kind').loc['weekday']
+    st.markdown(f'**Decision implication:** use the weekday profile to pick busy days for limited operational '
+                f'reviews. Over the full holdout, two weekday-chosen review days per week covered '
+                f'{lead_row.demand_share:.1%} of coin-in versus {lead_row.uniform_share:.1%} for a uniform allocation '
+                f'({lead_row.gain_pp:+.1f} pp; week-bootstrap 95% range {lead_row.gain_low_pp:+.1f} to '
+                f'{lead_row.gain_high_pp:+.1f} pp). See the review-day planning comparison below. '
+                'This is retrospective demand alignment, not a staffing or revenue effect.')
+st.caption('Scores come from forecasts frozen after fitting on January–April; nothing on this page refits a model. '
+           'Coin-in is a demand proxy; this forecast does not estimate staffing needs or promotion lift directly. '
+           'One holdout cannot establish future superiority.')
 
 start, end = st.slider('Evaluation period', min_value=data.gaming_date.min().date(), max_value=data.gaming_date.max().date(),
                        value=(data.gaming_date.min().date(), data.gaming_date.max().date()))
 view = data[data.gaming_date.dt.date.between(start, end)]
-full_scores = score_forecasts(data)
 selected_scores = score_forecasts(view)
 scores = pd.DataFrame({'Model': [LABELS[k] for k in KINDS],
                        'Full holdout MAE (USD/day)': full_scores.to_numpy(),
@@ -51,7 +68,6 @@ st.dataframe(scores, hide_index=True, column_config={
     'Full holdout MAE (USD/day)': st.column_config.NumberColumn(format='dollar'),
     'Selected period MAE (USD/day)': st.column_config.NumberColumn(format='dollar'),
     'Full holdout improvement vs constant': st.column_config.NumberColumn(format='percent')})
-winner = full_scores.idxmin()
 st.metric('Lowest observed full-holdout MAE', f'${full_scores[winner]:,.0f}/day', LABELS[winner])
 gap = full_scores[FITTED_KIND] - full_scores['weekday']
 if gap >= 0:
@@ -60,18 +76,18 @@ if gap >= 0:
 else:
     st.info(f'The fitted weekday + trend regression beats the weekday-mean baseline by '
             f'${-gap:,.2f}/day on this holdout.')
-st.info('Decision: use the weekday profile to nominate busy days for operational review, '
-        'then inspect the equal-resource planning comparison below. '
-        'Coin-in is a demand proxy; this forecast does not estimate staffing needs or promotion lift directly. '
-        'The lowest error in this one holdout does not establish future superiority.')
-
 selected = st.multiselect('Forecasts to compare', list(KINDS), default=list(KINDS), format_func=LABELS.get)
-fig = go.Figure(go.Scatter(x=view.gaming_date, y=view.coin_in_usd, name='Actual coin-in', line=dict(color='#222222')))
-for kind, color in zip(KINDS, ['#777777', '#35665D', '#A47734']):
-    if kind in selected:
-        fig.add_trace(go.Scatter(x=view.gaming_date, y=view[f'{kind}_prediction_usd'], name=LABELS[kind], line=dict(color=color)))
-fig.update_layout(height=380, yaxis_title='Daily coin-in (USD)', hovermode='x unified', yaxis_tickformat='$,.0f')
-st.plotly_chart(fig, width='stretch')
+st.plotly_chart(visuals.forecast_chart(view, [k for k in KINDS if k in selected], LABELS), width='stretch')
+st.caption('Black: actual daily coin-in. Lines: frozen predictions for the selected forecasts, stored in the mart.')
+
+st.subheader('Validation: earlier months train, later months test')
+st.markdown('**Training:** January 1–April 30, 2025 (120 days). **Held-out test:** May 1–June 30, 2025 (61 days). '
+            'Each forecast is fitted once on the training period, then frozen for the entire test horizon. '
+            'Inputs are the gaming date’s weekday and, for the trend model, elapsed calendar days. '
+            'No test-day results, lagged holdout outcomes, later-published tourism, surveys, or future repairs are used.')
+st.markdown('**Constant baseline:** the mean daily coin-in during training. **Weekday baseline:** the training mean for each weekday. '
+            '**Fitted regression (weekday + linear trend):** seven weekday intercepts and one shared linear time slope, fitted by least squares. '
+            'Negative predictions are clipped to zero. These specifications are fixed; no hyperparameters are selected using the test period.')
 
 st.subheader('Where are the forecast errors?')
 drill = st.radio('Error breakdown', ['Month', 'Weekday'], horizontal=True)
@@ -126,6 +142,7 @@ else:
                      'gain_low_pp': st.column_config.NumberColumn('Gain 95% low (pp)', format='%.2f'),
                      'gain_high_pp': st.column_config.NumberColumn('Gain 95% high (pp)', format='%.2f'),
                  })
+    st.plotly_chart(visuals.planning_chart(planning), width='stretch')
     chosen = schedules[(schedules.kind == 'weekday') & schedules.priority_day]
     names = sorted(chosen.gaming_date.dt.day_of_week.unique())
     st.info('Operational candidate: the training-only weekday rule selects '

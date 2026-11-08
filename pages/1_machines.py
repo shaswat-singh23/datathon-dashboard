@@ -5,7 +5,7 @@ import streamlit as st
 
 from royale.evidence import render_evidence
 from royale.theme import apply_theme
-from royale import io
+from royale import io, visuals
 from royale.marts import q1_location as location
 from royale.marts.q1_machines import summarize
 
@@ -36,6 +36,16 @@ overlap = len(set(raw.index) & set(adjusted.index))
 st.metric('Manager picks surviving adjustment', f'{overlap} / {len(raw)}')
 st.caption('Ranks and peer benchmarks recalculate within the selected period and bank. '
            'A machine with zero available hours has no adjusted rate and sorts last.')
+st.subheader('How the manager’s ten picks move once exposure and luck are removed')
+slope = visuals.slope_table(ranked)
+st.plotly_chart(visuals.slope_chart(slope), width='stretch')
+leaving = slope.index[slope.leaves_bottom_ten].tolist()
+st.caption('Each line is one of the manager’s ten picks in this selection (rank 1 = lowest; log scale). '
+           + (f'Highlighted: {", ".join(leaving)}, which leave the adjusted bottom ten. ' if leaving else
+              'All ten stay in the adjusted bottom ten in this selection. ')
+           + 'A rank shift is not an estimated replacement uplift: it says how a machine compares per available '
+             'hour after removing payout luck, not what a new title would earn. Exact ranks are in the '
+             '“Manager” table below (Manager rank and Adjusted rank columns).')
 left, right = st.columns(2)
 ranking_columns = {
     'machine_id': 'Machine', 'raw_rank': 'Manager rank', 'adjusted_rank': 'Adjusted rank',
@@ -57,7 +67,7 @@ ranking_columns = {
 }
 with left:
     st.subheader('Manager: lowest total house win')
-    st.dataframe(raw[['house_win', 'adjusted_rank', 'triage', 'luck_z', 'rule']], width='stretch', column_config=ranking_columns)
+    st.dataframe(raw[['raw_rank', 'house_win', 'adjusted_rank', 'triage', 'luck_z', 'rule']], width='stretch', column_config=ranking_columns)
 with right:
     st.subheader('Adjusted: lowest expected contribution/hour')
     st.dataframe(adjusted[['adjusted_per_hour', 'raw_rank', 'zone', 'game']], width='stretch', column_config=ranking_columns)
