@@ -176,3 +176,16 @@ def test_deployment_check_diagnoses_auth_redirect(tmp_path, monkeypatch):
     result = rubric.deployment_check(tmp_path, "https://x.streamlit.app/")
     assert result["status"] == "fail"
     assert "not public" in result["details"]["diagnosis"]
+
+
+def test_carded_scope_flags_mixed_mart_and_accepts_carded_columns(tmp_path):
+    marts = tmp_path / "royale/marts"
+    marts.mkdir(parents=True)
+    (marts / "bad.py").write_text("SQL = 'SELECT house_win_cents FROM machine_day JOIN sessions USING (player_id)'")
+    assert rubric.carded_scope_check(tmp_path)["status"] == "fail"
+    (marts / "bad.py").write_text("SQL = 'SELECT carded_house_win_cents FROM machine_day JOIN sessions USING (player_id)'")
+    assert rubric.carded_scope_check(tmp_path)["status"] == "pass"
+
+
+def test_carded_scope_passes_on_repo():
+    assert rubric.carded_scope_check(ROOT)["status"] == "pass"
