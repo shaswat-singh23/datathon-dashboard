@@ -150,6 +150,9 @@ bk = bk.sort_values("lost_share", ascending=False)
 st.dataframe(bk[["zone", "machines", "lost_h", "lost_share", "lost_h_per_machine", "lost_coin_in", "lost_theo"]],
              width="stretch", height=280, column_config={"zone": "Zone", **TABLE_COLS})
 
+st.caption("Uncertainty: lost hours are measured, but lost coin-in and theo are estimates with no interval "
+           "(they assume a machine plays at its own monthly rate when up), and a bank or machine with few "
+           "scheduled hours moves a lot on one outage.")
 st.markdown("**Machines with the most lost hours**")
 mc = group_table(md, ["machine_id", "manufacturer"]).reset_index()
 nf = faults.groupby("machine_id").size().rename("fault_tickets")
