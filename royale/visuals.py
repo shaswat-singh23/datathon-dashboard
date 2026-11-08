@@ -316,7 +316,7 @@ def forecast_chart(view: pd.DataFrame, kinds, labels: dict) -> go.Figure:
                                line=dict(color=INK, width=2)))
     for kind in kinds:
         fig.add_trace(go.Scatter(x=view.gaming_date, y=view[f"{kind}_prediction_usd"], name=labels[kind],
-                                 line=dict(color=colors.get(kind, BLUE), dash="solid" if kind == "weekday" else "dot")))
+                                 line=dict(color=colors.get(kind, BLUE), dash={"weekday": "solid", "weekday_trend": "dash"}.get(kind, "dot"))))
     fig.update_layout(height=380, yaxis_title="Daily coin-in (USD)", hovermode="x unified",
                       yaxis_tickformat="$,.0f", legend=dict(orientation="h", y=1.12, x=0))
     return label(fig, "Actual vs predicted daily coin-in (holdout)", "Gaming date")

@@ -48,14 +48,16 @@ c3.metric("Tracked cost / tracked theo", "Undefined" if ratio is None else f"{ra
 
 st.subheader("Monthly cost and reinvestment")
 long = monthly.melt(id_vars="month", value_vars=["comp_cost_usd", "comp_face_value_usd"], var_name="Measure", value_name="USD")
-st.plotly_chart(visuals.label(px.bar(long, x="month", y="USD", color="Measure", barmode="group"),
+st.plotly_chart(visuals.label(px.bar(long, x="month", y="USD", color="Measure", pattern_shape="Measure", barmode="group"),
                               "Monthly comp cost and menu value", "Month", "USD"), width="stretch")
 st.plotly_chart(visuals.label(px.line(monthly, x="month", y="comp_reinvestment", markers=True,
                         labels={"comp_reinvestment": "Comp cost / tracked theo"}), "Comp cost as a share of tracked theo by month", "Month"), width="stretch")
 st.dataframe(monthly, hide_index=True, width="stretch")
 
 st.subheader("Did redemption intensity change?")
-st.plotly_chart(visuals.label(px.line(monthly, x="month", y=["points_earned", "points_redeemed"], markers=True),
+pts = px.line(monthly, x="month", y=["points_earned", "points_redeemed"], markers=True)
+pts.update_traces(line_dash="dash", marker_symbol="square", selector=dict(name="points_redeemed"))
+st.plotly_chart(visuals.label(pts,
                               "Loyalty points earned and redeemed by month", "Month", "Points"), width="stretch")
 st.plotly_chart(visuals.label(px.line(monthly, x="month", y="points_per_face_dollar", markers=True,
                         labels={"points_per_face_dollar": "Points redeemed / comp menu dollar"}), "Points redeemed per comp menu dollar by month", "Month"), width="stretch")
