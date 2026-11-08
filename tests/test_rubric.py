@@ -176,3 +176,14 @@ def test_deployment_check_diagnoses_auth_redirect(tmp_path, monkeypatch):
     result = rubric.deployment_check(tmp_path, "https://x.streamlit.app/")
     assert result["status"] == "fail"
     assert "not public" in result["details"]["diagnosis"]
+
+
+def test_pages_readme_must_list_every_page(tmp_path):
+    (tmp_path / "pages").mkdir()
+    (tmp_path / "pages/1_a.py").write_text("")
+    (tmp_path / "pages/2_b.py").write_text("")
+    (tmp_path / "pages/README.md").write_text("`1_a.py`")
+    result = rubric.pages_readme_check(tmp_path)
+    assert result["status"] == "fail" and result["details"]["missing_from_pages_readme"] == ["2_b.py"]
+    (tmp_path / "pages/README.md").write_text("`1_a.py` `2_b.py`")
+    assert rubric.pages_readme_check(tmp_path)["status"] == "pass"
