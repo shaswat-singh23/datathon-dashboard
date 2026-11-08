@@ -24,6 +24,7 @@ from urllib.request import HTTPRedirectHandler, build_opener, urlopen
 ROOT = Path(__file__).resolve().parents[1]
 WEIGHTS = dict(zip((f"R{i}" for i in range(1, 18)),
                    (3, 3, 2, 2, 3, 3, 4, 3, 2, 2, 2, 3, 2, 2, 1, 2, 1)))
+WEIGHTS["R51"] = 1
 NESTED = "ROYALE_RUBRIC_NESTED"
 
 
@@ -203,7 +204,13 @@ def inspect_page(page):
                     fresh.switch_page(page).run()
                 clean(fresh)
                 before = snapshot(fresh)
+                text_before = rendered_text(fresh)
                 change(fresh)
+                if check == "R2":
+                    changed = rendered_text(fresh) != text_before
+                    result["R51"] = {"status": "pass" if changed else "fail",
+                                     "details": "Page text changed with the period" if changed
+                                     else "Period changed but no visible text states the new window"}
                 result[check] = {"status": "pass" if snapshot(fresh) != before else "fail",
                                  "details": "Displayed results changed" if snapshot(fresh) != before
                                  else "Control changed, but no measured output changed"}
@@ -372,7 +379,9 @@ def run_checks(root=ROOT, *, run_tests=True, url=None):
     rows = [page_row("R1", pages, lambda p: ("pass" if p["seconds"] < 5 else "fail",
                                            {"seconds": p["seconds"], "limit_seconds": 5})),
             *[page_row(check, pages, lambda p, c=check: (p[c]["status"], p[c]["details"])) for check in ("R2", "R3")],
-            page_row("R4", pages, source_status)]
+            page_row("R4", pages, source_status),
+            page_row("R51", pages, lambda p: (p.get("R51", {}).get("status", "fail"),
+                                              p.get("R51", {}).get("details", "Period experiment did not run")))]
     model = next((p for p in pages if p["page"] == "pages/7_model.py"), {})
     text = model.get("text", "")
     model_ok = (not model.get("error") and all(re.search(pattern, text, re.I | re.S) for pattern in
