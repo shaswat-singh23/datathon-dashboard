@@ -9,6 +9,16 @@
     <radialGradient id="ga-halo"><stop stop-color="#E9BD68" stop-opacity=".22"/><stop offset="1" stop-color="#E9BD68" stop-opacity="0"/></radialGradient>
     <radialGradient id="ga-hub"><stop stop-color="#FFEAC0"/><stop offset=".4" stop-color="#C09B57"/><stop offset="1" stop-color="#684A28"/></radialGradient>
     <pattern id="ga-cardback" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M5 0 10 5 5 10 0 5Z" stroke="#E0BA7B" stroke-width=".7"/></pattern>
+    <style>
+      /* The two sparkle pairs glint slowly (7s and 9s), offset so they never pulse together.
+         Opacity only, low contrast, and nothing moves. Off entirely under reduced motion. */
+      @media (prefers-reduced-motion: no-preference) {
+        @keyframes ga-glint { 0%, 100% { opacity: .45; } 50% { opacity: 1; } }
+        @keyframes ga-glint-dim { 0%, 100% { opacity: .2; } 50% { opacity: .6; } }
+        .ga-glint-a { animation: ga-glint 7s ease-in-out infinite; }
+        .ga-glint-b { animation: ga-glint-dim 9s ease-in-out 3s infinite; }
+      }
+    </style>
   </defs>
   <ellipse cx="285" cy="126" rx="215" ry="124" fill="url(#ga-halo)"/>
   <!-- Brass roulette wheel, with engraved pockets and an ivory ball. -->
@@ -88,5 +98,5 @@
     <rect x="4" y="4" width="33" height="33" rx="4" stroke="#E7BC83" stroke-opacity=".3"/>
     <g fill="#F5DFB5"><circle cx="11" cy="11" r="3"/><circle cx="30" cy="11" r="3"/><circle cx="11" cy="30" r="3"/><circle cx="30" cy="30" r="3"/></g>
   </g>
-  <g stroke="#DABD7D" stroke-linecap="round"><path d="M64 61v14 M57 68h14 M449 162v14 M442 169h14"/><path d="M72 60v4 M70 62h4 M433 45v8 M429 49h8" opacity=".5"/></g>
+  <g stroke="#DABD7D" stroke-linecap="round"><path class="ga-glint-a" d="M64 61v14 M57 68h14 M449 162v14 M442 169h14"/><path class="ga-glint-b" d="M72 60v4 M70 62h4 M433 45v8 M429 49h8" opacity=".5"/></g>
 </svg>
