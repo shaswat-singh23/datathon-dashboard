@@ -336,6 +336,34 @@ def budget_check(root):
         return row("R12", "fail", str(exc))
 
 
+MONEY_PATTERNS = {
+    "hand-rolled theo (use money.theo)": r"1(?:\.0)?\s*-\s*\w*rtp|rtp\w*\s*\)?\s*\*\s*coin|coin_in\w*\s*\*\s*\(\s*1\s*-",
+    "AVG over a ratio (use ratio of sums)": r"avg\s*\([^)]*(hold|ratio|rate|\w\s*/\s*\w)",
+    "mean of a ratio column (use ratio of sums)": r"(hold|ratio|rate|rtp)\w*[\"'\]\s]*\)?\s*\.mean\(|\.mean\(\)[^\n]*(hold|ratio)",
+}
+
+
+def money_violations(root):
+    files = [*root.glob("pages/*.py"), root / "app.py", *(root / "royale").rglob("*.py")]
+    found = []
+    for f in files:
+        if f.name == "money.py" or not f.exists():
+            continue
+        for n, line in enumerate(f.read_text().splitlines(), 1):
+            for label, pat in MONEY_PATTERNS.items():
+                if re.search(pat, line, re.I):
+                    found.append({"file": f"{f.relative_to(root)}:{n}", "pattern": label, "line": line.strip()[:120]})
+    return found
+
+
+def money_check(root):
+    found = money_violations(root)
+    return row("R10", "fail" if found else "manual",
+               {"violations": found,
+                "details": "Static scan for hand-rolled theo and averaged ratios found "
+                           + ("these." if found else "none. Ratios of sums, dated placement joins and off-floor exclusions in each query still need manual audit.")})
+
+
 def originality_check(root):
     findings = [p for p in (root / "findings").glob("*.md") if p.name != "README.md"]
     candidates = [p.name for p in findings if re.search(r"\bunexpected\b", p.read_text(), re.I)
@@ -369,7 +397,7 @@ def run_checks(root=ROOT, *, run_tests=True, url=None):
         row("R7", "manual", "Requires claim-by-claim numeric reconciliation with independently checked findings; digit or filename matching cannot prove this."),
         appendix_check(root),
         row("R9", "manual", "Review uncertainty for every machine/group comparison and interactive state; keywords do not establish coverage or validity."),
-        row("R10", "manual", "Audit money helpers, ratios of sums, dated placement joins and off-floor exclusions in every query; source mentions alone are insufficient."),
+        money_check(root),
         row("R11", "manual", "Trace forecast feature provenance and availability dates, including indirect imports; banning words in model code would flag explanatory comments and miss leakage."),
         budget_check(root), deliverables_check(root), deployment_check(root, url),
         mart_and_tests_check(root, run_tests),
