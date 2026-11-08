@@ -22,8 +22,8 @@ from urllib.error import URLError
 from urllib.request import HTTPRedirectHandler, build_opener, urlopen
 
 ROOT = Path(__file__).resolve().parents[1]
-WEIGHTS = dict(zip((f"R{i}" for i in range(1, 18)),
-                   (3, 3, 2, 2, 3, 3, 4, 3, 2, 2, 2, 3, 2, 2, 1, 2, 1)))
+WEIGHTS = {**dict(zip((f"R{i}" for i in range(1, 18)),
+                      (3, 3, 2, 2, 3, 3, 4, 3, 2, 2, 2, 3, 2, 2, 1, 2, 1))), "R47": 2}
 NESTED = "ROYALE_RUBRIC_NESTED"
 
 
@@ -277,6 +277,26 @@ def deliverables_check(root):
                 "word_rule": "Whitespace-separated tokens, including headings and links (conservative)."})
 
 
+WRITEUP_ELEMENTS = {
+    "verdict_on_manager_picks": r"manager.{0,40}(ten|10|picks|list)|bottom (ten|10)",
+    "holdout_mae_vs_constant_baseline": r"(MAE|mean absolute error).*constant|constant.*(MAE|mean absolute error)",
+    "plan_total_within_budget": r"total spend[^$]{0,20}\$\s?([\d,]+)",
+    "uncertainty": r"uncertain|confidence interval|scenario|alternative explanation",
+    "measurement_plan": r"monitor|measure|control",
+}
+
+
+def writeup_content_check(root):
+    path = root / "docs/writeup.md"
+    text = path.read_text() if path.is_file() else ""
+    found = {name: bool(re.search(pattern, text, re.I | re.S)) for name, pattern in WRITEUP_ELEMENTS.items()}
+    total = re.search(WRITEUP_ELEMENTS["plan_total_within_budget"], text, re.I)
+    over = bool(total) and int(total.group(1).replace(",", "") or 0) > 100_000
+    return row("R47", "pass" if all(found.values()) and not over else "fail",
+               {"elements": found, "plan_total_over_100000": over,
+                "limitation": "Regex presence only; whether each statement is correct is R7's manual audit."})
+
+
 def deployment_check(root, url=None):
     if not url:
         readme = root / "README.md"
@@ -394,7 +414,7 @@ def run_checks(root=ROOT, *, run_tests=True, url=None):
         row("R9", "manual", "Review uncertainty for every machine/group comparison and interactive state; keywords do not establish coverage or validity."),
         row("R10", "manual", "Audit money helpers, ratios of sums, dated placement joins and off-floor exclusions in every query; source mentions alone are insufficient."),
         row("R11", "manual", "Trace forecast feature provenance and availability dates, including indirect imports; banning words in model code would flag explanatory comments and miss leakage."),
-        budget_check(root), deliverables_check(root), deployment_check(root, url),
+        budget_check(root), deliverables_check(root), writeup_content_check(root), deployment_check(root, url),
         mart_and_tests_check(root, run_tests),
     ])
     chart_details = [{"page": p["page"], **p.get("charts", {"problems": [p.get("error", "No chart inspection")]})} for p in pages]
