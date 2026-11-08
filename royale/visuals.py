@@ -22,6 +22,22 @@ RULE = "#6A5F52"     # reference lines and boundaries
 MUTED = "#968A7A"    # de-emphasized series, >= 3:1 on the chart paper
 
 
+def label(fig: go.Figure, title: str, x: str | None = None, y: str | None = None) -> go.Figure:
+    """Accessibility labels: set a chart title and axis titles, never overriding ones already set."""
+    def has(t):
+        t = getattr(t, "text", t)
+        return bool(t)
+    if not has(fig.layout.title):
+        top = max(fig.layout.margin.t or 0, 48)
+        fig.update_layout(title=dict(text=title, x=0.02, xanchor="left", font=dict(size=14)),
+                          margin=dict(t=top))
+    if x and not has(fig.layout.xaxis.title):
+        fig.update_xaxes(title=x)
+    if y and not has(fig.layout.yaxis.title):
+        fig.update_yaxes(title=y)
+    return fig
+
+
 def usd(value: float) -> str:
     """Whole dollars with the sign before the symbol: −$5,330."""
     return f"{'−' if value < 0 else ''}${abs(value):,.0f}"
@@ -71,7 +87,7 @@ def slope_chart(table: pd.DataFrame) -> go.Figure:
                      tickvals=[1, 2, 5, 10, 20, 50, 100, 200, 300], zeroline=False)
     fig.update_xaxes(showgrid=False)
     fig.update_layout(height=420, margin=dict(l=10, r=160, t=30, b=10))
-    return fig
+    return label(fig, "Manager bottom ten: raw rank vs exposure-adjusted rank", "Ranking basis", "Rank (1 = lowest)")
 
 
 # ---- Demand: Back Forty vs rest of floor around the closure --------------------------------
@@ -149,7 +165,7 @@ def closure_chart(table: pd.DataFrame) -> go.Figure:
     fig.update_layout(barmode="group", height=340, legend=dict(orientation="h", y=1.12, x=0),
                       margin=dict(l=10, r=10, t=40, b=10))
     fig.update_yaxes(title="Coin-in per available machine-hour ($/h)", tickformat="$,.0f")
-    return fig
+    return label(fig, "Coin-in per available hour around the walkway closure", "Closure phase")
 
 
 # ---- Actions: costs, cards and assumed-recovery scenarios ---------------------------------
@@ -190,7 +206,7 @@ def cost_chart(costs: pd.DataFrame, budget_usd: float = config.BUDGET_USD) -> go
                      range=[0, max(costs.cost_usd.max(), budget_usd) * 1.22])
     fig.update_layout(height=330, legend=dict(orientation="h", y=1.15, x=0),
                       margin=dict(l=10, r=30, t=40, b=10))
-    return fig
+    return label(fig, "July option costs vs $100,000 budget", None, "Option")
 
 
 def recovery_scenarios(options: pd.DataFrame, levels=RECOVERY_LEVELS) -> pd.DataFrame:
@@ -228,7 +244,7 @@ def scenario_chart(scenarios: pd.DataFrame) -> go.Figure:
                      tickvals=list(RECOVERY_LEVELS))
     fig.update_yaxes(title="Incremental theo less spend ($)", tickformat="$,.0f")
     fig.update_layout(height=340, legend=dict(orientation="h", y=1.12, x=0), margin=dict(l=10, r=10, t=40, b=10))
-    return fig
+    return label(fig, "Incremental theo less spend by assumed recovery")
 
 
 def action_cards(options: pd.DataFrame, catalog: pd.DataFrame, evidence: dict,
@@ -290,7 +306,7 @@ def mae_chart(table: pd.DataFrame) -> go.Figure:
     fig.update_xaxes(title="Holdout MAE, May 1–June 30<br>(USD/day; lower is better)",
                      tickformat="$,.0f", range=[0, table.mae_usd.max() * 1.4])
     fig.update_layout(height=260, margin=dict(l=10, r=30, t=20, b=10), showlegend=False)
-    return fig
+    return label(fig, "Holdout MAE by model, May–June", None, "Model")
 
 
 def forecast_chart(view: pd.DataFrame, kinds, labels: dict) -> go.Figure:
@@ -303,7 +319,7 @@ def forecast_chart(view: pd.DataFrame, kinds, labels: dict) -> go.Figure:
                                  line=dict(color=colors.get(kind, BLUE), dash="solid" if kind == "weekday" else "dot")))
     fig.update_layout(height=380, yaxis_title="Daily coin-in (USD)", hovermode="x unified",
                       yaxis_tickformat="$,.0f", legend=dict(orientation="h", y=1.12, x=0))
-    return fig
+    return label(fig, "Actual vs predicted daily coin-in (holdout)", "Gaming date")
 
 
 def planning_chart(planning: pd.DataFrame) -> go.Figure:
@@ -330,4 +346,4 @@ def planning_chart(planning: pd.DataFrame) -> go.Figure:
                                       "(percentage points; whiskers: week bootstrap)",
                                  x=0.02, xanchor="left", xref="container",
                                  font=dict(family="Georgia, serif", color=INK, size=14, weight="normal")))
-    return fig
+    return label(fig, "Review-day demand share vs uniform allocation", "Gain vs uniform (percentage points)", "Model")

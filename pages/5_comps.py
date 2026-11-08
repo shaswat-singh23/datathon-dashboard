@@ -5,6 +5,7 @@ import streamlit as st
 
 from royale.evidence import render_evidence
 from royale.filters import independent_scope_note
+from royale import visuals
 from royale.theme import apply_theme
 
 from royale import io, money
@@ -47,15 +48,17 @@ c3.metric("Tracked cost / tracked theo", "Undefined" if ratio is None else f"{ra
 
 st.subheader("Monthly cost and reinvestment")
 long = monthly.melt(id_vars="month", value_vars=["comp_cost_usd", "comp_face_value_usd"], var_name="Measure", value_name="USD")
-st.plotly_chart(px.bar(long, x="month", y="USD", color="Measure", barmode="group"), width="stretch")
-st.plotly_chart(px.line(monthly, x="month", y="comp_reinvestment", markers=True,
-                        labels={"comp_reinvestment": "Comp cost / tracked theo"}), width="stretch")
+st.plotly_chart(visuals.label(px.bar(long, x="month", y="USD", color="Measure", barmode="group"),
+                              "Monthly comp cost and menu value", "Month", "USD"), width="stretch")
+st.plotly_chart(visuals.label(px.line(monthly, x="month", y="comp_reinvestment", markers=True,
+                        labels={"comp_reinvestment": "Comp cost / tracked theo"}), "Comp cost as a share of tracked theo by month", "Month"), width="stretch")
 st.dataframe(monthly, hide_index=True, width="stretch")
 
 st.subheader("Did redemption intensity change?")
-st.plotly_chart(px.line(monthly, x="month", y=["points_earned", "points_redeemed"], markers=True), width="stretch")
-st.plotly_chart(px.line(monthly, x="month", y="points_per_face_dollar", markers=True,
-                        labels={"points_per_face_dollar": "Points redeemed / comp menu dollar"}), width="stretch")
+st.plotly_chart(visuals.label(px.line(monthly, x="month", y=["points_earned", "points_redeemed"], markers=True),
+                              "Loyalty points earned and redeemed by month", "Month", "Points"), width="stretch")
+st.plotly_chart(visuals.label(px.line(monthly, x="month", y="points_per_face_dollar", markers=True,
+                        labels={"points_per_face_dollar": "Points redeemed / comp menu dollar"}), "Points redeemed per comp menu dollar by month", "Month"), width="stretch")
 st.caption("Use the first selected month as a simple constant-intensity baseline. Points per menu dollar separates redemption intensity from comp volume. A break is descriptive evidence, not proof of a policy change; guest mix, item mix and accounting timing remain alternatives.")
 first = monthly.iloc[0].points_per_face_dollar
 monthly_baseline = monthly[["month", "points_redeemed"]].copy()

@@ -163,7 +163,7 @@ else:
 fig = go.Figure(go.Scatter(x=tr["gaming_date"], y=tr["coin_in_usd"], mode="lines", line=dict(color=PRIMARY, width=2),
                            name="Coin-in", hovertemplate=hover))
 shade(fig, view)
-st.plotly_chart(style(fig), width="stretch")
+st.plotly_chart(visuals.label(style(fig), f"Coin-in trend, {scope_name}", "Gaming date", "Coin-in (USD)"), width="stretch")
 st.caption("Gray bands: events (events table). Orange band: walkway closure (floor_walkways). "
            "Weekly points are the mean daily coin-in for the days of that week inside the period.")
 
@@ -215,7 +215,8 @@ with left:
     st.subheader("Weekday rhythm (non-event days)")
     f2 = go.Figure(go.Bar(x=wd.index, y=wd.values, marker_color=PRIMARY, marker_line_width=0,
                           hovertemplate="%{x}: $%{y:,.0f}/day<extra></extra>"))
-    st.plotly_chart(style(f2, 280).update_layout(hovermode="closest", bargap=0.35), width="stretch")
+    st.plotly_chart(visuals.label(style(f2, 280).update_layout(hovermode="closest", bargap=0.35),
+                                  "Average coin-in by weekday, non-event days", "Weekday", "Coin-in per day (USD)"), width="stretch")
 
 with right:
     st.subheader("Event days vs same weekday")
@@ -245,7 +246,8 @@ heat = go.Figure(go.Heatmap(z=zm.values, x=list(zm.columns), y=list(zm.index), c
                             text=[[f"${v:,.0f}" for v in row] for row in zm.values], texttemplate="%{text}",
                             hovertemplate="%{y}, %{x}: $%{z:,.1f} per available machine-hour<extra></extra>",
                             xgap=2, ygap=2, colorbar=dict(title="$/hr", tickprefix="$")))
-st.plotly_chart(style(heat, 300).update_layout(hovermode="closest"), width="stretch")
+st.plotly_chart(visuals.label(style(heat, 300).update_layout(hovermode="closest"),
+                              "Coin-in per available machine-hour by zone and month", "Month", "Zone"), width="stretch")
 
 if zone != "All zones":
     z_in = view[view["zone_id"] == zone]
@@ -266,7 +268,7 @@ if zone != "All zones":
                           text=f" {zone_label[zone] if s is wz else 'Rest of floor'}", font=dict(size=11))
     shade(f3, view)
     st.markdown(f"**{zone_label[zone]} vs rest of floor**, weekly coin-in per available machine-hour")
-    st.plotly_chart(style(f3, 300, "$,.0f"), width="stretch")
+    st.plotly_chart(visuals.label(style(f3, 300, "$,.0f"), f"{zone_label[zone]} vs rest of floor, weekly", "Week starting", "Coin-in per available machine-hour ($)"), width="stretch")
 
     zk1, zk2, zk3 = st.columns(3)
     zk1.metric("Occupancy (occupied / available hrs)", f"{ratio(z_in['occupied_hours'], z_in['available_hours']):.1%}")
@@ -310,7 +312,7 @@ else:
                          yaxis2=dict(title={"tmax_c": "Temperature (°C)", "prcp_mm": "Rain (mm)",
                              "visitors_per_calendar_day": "Visitors / day"}[metric],
                              overlaying="y", side="right", showgrid=False))
-        st.plotly_chart(cf, width="stretch")
+        st.plotly_chart(visuals.label(cf, "Whole-floor coin-in against an external context series", "Gaming date"), width="stretch")
 
         rows = []
         # Daily weather correlations vs a simple same-weekday baseline adjustment.
